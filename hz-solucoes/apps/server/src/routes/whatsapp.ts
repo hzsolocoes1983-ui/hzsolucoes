@@ -38,13 +38,17 @@ router.post('/webhook', async (req: Request, res: Response) => {
     
     if (!user) {
       // Cria usuário automaticamente se não existir
-      const result = await db.insert(users).values({
+      await db.insert(users).values({
         whatsapp: from,
         name: from.split('@')[0], // Nome padrão
         password: 'whatsapp-auth', // Senha padrão para WhatsApp
         createdAt: new Date(),
-      }).returning();
-      user = result[0];
+      });
+      // Busca o usuário recém criado
+      user = await db.select().from(users).where(eq(users.whatsapp, from)).get();
+      if (!user) {
+        return res.status(500).json({ error: 'Failed to create user' });
+      }
     }
 
     const { command, args } = parseCommand(body);
