@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
-import { router } from './routes/trpc';
+import { router } from './routes/trpc.js';
 
 const app = express();
 
