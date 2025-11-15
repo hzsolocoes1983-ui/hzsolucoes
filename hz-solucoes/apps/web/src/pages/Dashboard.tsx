@@ -98,6 +98,82 @@ export default function Dashboard() {
       </div>
 
       <div className="p-4 space-y-6 max-w-6xl mx-auto">
+        {/* Cuidados do Dia */}
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-700">Cuidados do Dia</h2>
+              <p className="text-xs text-gray-500">Rotinas pessoais saúde e bem-estar</p>
+            </div>
+            <div className="text-sm text-gray-600">
+              {new Date().toLocaleDateString('pt-BR')}
+            </div>
+          </div>
+          <div className="flex gap-2 mb-3">
+            <Button variant="outline" size="sm">Ver calendário</Button>
+            <Button variant="outline" size="sm">Configurar rotina</Button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-3">
+                <div className="text-center">
+                  <div className="text-2xl mb-2">💊</div>
+                  <div className="text-xs font-medium mb-1">Hormônios</div>
+                  <div className="text-xs text-gray-600 mb-1">Horário 07:00</div>
+                  <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mb-2">Pendente</span>
+                  <Button size="sm" className="w-full text-xs">Marcar</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-3">
+                <div className="text-center">
+                  <div className="text-2xl mb-2">💊</div>
+                  <div className="text-xs font-medium mb-1">Remédio</div>
+                  <div className="text-xs text-gray-600 mb-1">Horário 08:00</div>
+                  <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mb-2">Pendente</span>
+                  <Button size="sm" className="w-full text-xs">Marcar</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-3">
+                <div className="text-center">
+                  <div className="text-2xl mb-2">🍴</div>
+                  <div className="text-xs font-medium mb-1">Alimentação</div>
+                  <div className="text-xs text-gray-600 mb-1">Próxima: Café às 08:30</div>
+                  <Button size="sm" className="w-full text-xs mt-2">Marcar próxima</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-cyan-50 border-cyan-200">
+              <CardContent className="p-3">
+                <div className="text-center">
+                  <div className="text-2xl mb-2">💧</div>
+                  <div className="text-xs font-medium mb-1">Água</div>
+                  <div className="text-xs text-gray-600 mb-1">Meta 2000ml</div>
+                  <div className="text-xs font-semibold mb-2">0ml / 2000ml</div>
+                  <Button size="sm" className="w-full text-xs">+200ml</Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-purple-50 border-purple-200">
+              <CardContent className="p-3">
+                <div className="text-center">
+                  <div className="text-2xl mb-2">🏋️</div>
+                  <div className="text-xs font-medium mb-1">Exercício</div>
+                  <div className="text-xs text-gray-600 mb-1">Horário 11:10</div>
+                  <Button size="sm" className="w-full text-xs mt-2">Marcar</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
         {/* Resumo */}
         <div>
           <h2 className="text-lg font-semibold mb-3 text-gray-700">Visão rápida dos principais números</h2>
