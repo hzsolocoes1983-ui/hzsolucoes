@@ -27,7 +27,7 @@ export function GoalCircle({ goal }: { goal: any }) {
           </PieChart>
         </ResponsiveContainer>
         <p className="mt-2 text-sm">
-          R$ {goal.currentAmount / 100} de R$ {goal.targetAmount / 100}
+          R$ {goal.currentAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} de R$ {goal.targetAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
       </CardContent>
     </Card>
