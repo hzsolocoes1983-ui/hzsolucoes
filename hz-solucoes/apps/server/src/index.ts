@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { router } from './routes/trpc.js';
+import whatsappRouter from './routes/whatsapp.js';
 import { initDatabase } from './db/migrate.js';
 
 const app = express();
@@ -15,6 +16,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use('/trpc', createExpressMiddleware({ router }));
+app.use('/whatsapp', whatsappRouter);
 
 const port = process.env.PORT || 3000;
 
@@ -22,6 +24,7 @@ const port = process.env.PORT || 3000;
 initDatabase().then(() => {
   app.listen(port, () => {
     console.log(`Server listening on http://localhost:${port}`);
+    console.log(`WhatsApp webhook: http://localhost:${port}/whatsapp/webhook`);
   });
 }).catch((error) => {
   console.error('Failed to initialize database:', error);
