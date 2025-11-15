@@ -1,17 +1,33 @@
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
 
-type RouterShape = {
-  login: { mutate: (input: { whatsapp: string; password: string }) => Promise<{ token: string; user: any }> };
-  register: { mutate: (input: { whatsapp: string; name: string; password: string }) => Promise<void> };
-  getGoals: { query: () => Promise<any[]> };
-  getMonthlyTotal: { query: (input: { year: number; month: number }) => Promise<number> };
-  getMonthlyExpensesTotal: { query: (input: { year: number; month: number }) => Promise<number> };
-};
-
 // Allow configuring TRPC base URL via Vite env in production
 // Falls back to relative '/trpc' when served under the same domain.
 const TRPC_URL = import.meta.env.VITE_TRPC_URL || '/trpc';
 
-export const trpc = createTRPCProxyClient<RouterShape>({
+// Tipo do router (deve corresponder ao backend)
+type AppRouter = {
+  login: {
+    input: { whatsapp: string; password: string };
+    output: { token: string; user: any };
+  };
+  register: {
+    input: { whatsapp: string; name: string; password: string };
+    output: void;
+  };
+  getGoals: {
+    input: void;
+    output: any[];
+  };
+  getMonthlyTotal: {
+    input: { year: number; month: number };
+    output: number;
+  };
+  getMonthlyExpensesTotal: {
+    input: { year: number; month: number };
+    output: number;
+  };
+};
+
+export const trpc = createTRPCProxyClient<AppRouter>({
   links: [httpBatchLink({ url: TRPC_URL })],
 });
