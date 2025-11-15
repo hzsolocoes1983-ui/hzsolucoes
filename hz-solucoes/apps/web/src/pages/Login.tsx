@@ -77,6 +77,10 @@ export default function LoginPage() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       window.location.href = '/dashboard';
+    },
+    onError: (error) => {
+      console.error('Erro no login:', error);
+      alert('Erro ao fazer login. Verifique o console para mais detalhes.');
     }
   });
 
@@ -98,8 +102,15 @@ export default function LoginPage() {
           <p className="text-center text-sm text-white/80 mt-1">Mais simples e seguro para você</p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button onClick={() => login.mutate()} className="btn-access block w-3/4 mx-auto">
-            Acessar
+          <Button 
+            onClick={() => {
+              console.log('Botão clicado, iniciando login...');
+              login.mutate();
+            }} 
+            disabled={login.isPending}
+            className="btn-access block w-3/4 mx-auto"
+          >
+            {login.isPending ? 'Carregando...' : 'Acessar'}
           </Button>
           {/* Acesso rápido sem WhatsApp/Senha */}
         </CardContent>
