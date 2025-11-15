@@ -1,5 +1,4 @@
 import { db } from './index.js';
-import { users, goals, transactions } from './schema.js';
 
 export async function initDatabase() {
   // Cria as tabelas se não existirem
@@ -32,6 +31,44 @@ export async function initDatabase() {
       type TEXT NOT NULL,
       amount REAL NOT NULL,
       description TEXT,
+      category TEXT,
+      is_fixed INTEGER DEFAULT 0,
+      date INTEGER NOT NULL,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      price REAL,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS daily_care (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      scheduled_time TEXT,
+      completed INTEGER DEFAULT 0,
+      date INTEGER NOT NULL,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS water_intake (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      amount REAL NOT NULL,
       date INTEGER NOT NULL,
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
