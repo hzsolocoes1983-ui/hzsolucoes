@@ -7,18 +7,22 @@ import { useQuery } from '@tanstack/react-query';
 import { trpc } from '../lib/trpc';
 
 export default function Dashboard() {
-  const user = JSON.parse(localStorage.getItem('user')!);
-  const { data: goals = [] } = useQuery({ queryKey: ['goals'], queryFn: () => trpc.getGoals.query() });
-  const { data: balance = 0 } = useQuery({
-    queryKey: ['balance'],
-    queryFn: async () => {
-      const [rev, exp] = await Promise.all([
-        trpc.getMonthlyTotal.query({ year: 2025, month: 11 }),
-        trpc.getMonthlyExpensesTotal.query({ year: 2025, month: 11 })
-      ]);
-      return rev - exp;
-    }
-  });
+  const userStr = localStorage.getItem('user');
+  if (!userStr) {
+    window.location.href = '/';
+    return null;
+  }
+  
+  const user = JSON.parse(userStr);
+  
+  // Dados mockados temporariamente até corrigir tRPC
+  const goals = [
+    { id: 1, name: 'Reserva', targetAmount: 100000, currentAmount: 35000 },
+    { id: 2, name: 'Viagem', targetAmount: 50000, currentAmount: 22000 },
+    { id: 3, name: 'Reforma', targetAmount: 80000, currentAmount: 12000 },
+  ];
+  
+  const balance = 3300; // Mock temporário
 
   return (
     <div className="p-4 max-w-6xl mx-auto space-y-6">

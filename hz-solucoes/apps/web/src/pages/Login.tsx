@@ -91,7 +91,17 @@ export default function LoginPage() {
       console.log('Login sucesso:', data);
       localStorage.setItem('token', data.token || 'mock-token');
       localStorage.setItem('user', JSON.stringify(data.user || { whatsapp: '+5500000000000', name: 'Usuário' }));
-      window.location.href = '/dashboard';
+      
+      // Usa history.pushState para navegação SPA
+      window.history.pushState({}, '', '/dashboard');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      
+      // Fallback: recarrega se não funcionar
+      setTimeout(() => {
+        if (window.location.pathname !== '/dashboard') {
+          window.location.href = '/dashboard';
+        }
+      }, 100);
     },
     onError: (error: any) => {
       console.error('Erro no login:', error);
