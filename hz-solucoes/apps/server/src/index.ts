@@ -4,7 +4,13 @@ import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { router } from './routes/trpc';
 
 const app = express();
-app.use(cors());
+
+// CORS configuration - allow all origins in development, specific in production
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || '*',
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use('/trpc', createExpressMiddleware({ router }));
