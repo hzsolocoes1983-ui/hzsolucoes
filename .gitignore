@@ -1,0 +1,17 @@
+# Dependências e builds
+node_modules/
+dist/
+.turbo/
+apps/*/dist/
+apps/*/node_modules/
+
+# Ambiente e logs
+.env*
+*.log
+
+# SO/Editor
+.DS_Store
+Thumbs.db
+
+# Pasta legada (não commitar)
+hz-solucoes-railway/

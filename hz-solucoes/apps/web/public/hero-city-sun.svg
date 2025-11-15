@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="70%" stop-color="#0c1424"/>
+      <stop offset="100%" stop-color="#0b1120"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#fb923c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#bg)"/>
+
+  <!-- angled buildings -->
+  <g transform="translate(0,200) skewX(-12)" fill="#1f2937">
+    <rect x="120" y="700" width="180" height="700" opacity="0.45"/>
+    <rect x="340" y="600" width="160" height="800" opacity="0.35"/>
+    <rect x="520" y="740" width="140" height="660" opacity="0.4"/>
+    <rect x="700" y="620" width="180" height="780" opacity="0.3"/>
+  </g>
+
+  <!-- sun beam -->
+  <g>
+    <circle cx="820" cy="680" r="140" fill="url(#sun)" opacity="0.5"/>
+    <rect x="0" y="720" width="1200" height="8" fill="#f59e0b" opacity="0.25"/>
+  </g>
+</svg>

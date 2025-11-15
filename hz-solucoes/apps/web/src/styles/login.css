@@ -1,0 +1,101 @@
+/* Dark glass card */
+.glass-dark {
+  background: rgba(12, 14, 24, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* Access button smaller, white background, orange text */
+.btn-access {
+  background: #ffffff;
+  color: var(--accent, #ff7a00);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  height: 44px;
+}
+.btn-access:hover { filter: brightness(1.02); }
+
+.link-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  color: rgba(255,255,255,0.85);
+}
+
+.brand-title {
+  letter-spacing: 0.5px;
+}
+
+/* Hero backgrounds options with overlay */
+.hero-blue-arrows {
+  position: relative;
+  min-height: 100vh;
+  background:
+    url('/hero-blue-arrows.svg') center / cover no-repeat,
+    linear-gradient(120deg, #0f172a, #0b132b);
+  /* Accent color for button text when this hero is active */
+  --accent: #22d3ee;
+}
+.hero-blue-arrows::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.2) 30%, rgba(0,0,0,0.45));
+  pointer-events: none;
+}
+
+.hero-city-sun {
+  position: relative;
+  min-height: 100vh;
+  background:
+    url('/hero-city-sun.svg') center / cover no-repeat,
+    linear-gradient(120deg, #0f172a, #0b132b);
+  --accent: #f59e0b; /* warm orange matching sun highlight */
+}
+.hero-city-sun::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.2) 30%, rgba(0,0,0,0.45));
+  pointer-events: none;
+}
+
+.hero-currency-dark {
+  position: relative;
+  min-height: 100vh;
+  background:
+    url('/hero-currency-dark.svg') center / cover no-repeat,
+    linear-gradient(120deg, #0f172a, #0b132b);
+  --accent: #00bcd4; /* teal matching currency icons */
+}
+.hero-currency-dark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.2) 30%, rgba(0,0,0,0.45));
+  pointer-events: none;
+}
+
+/* Accent color options for button text */
+.accent-cyan { --accent: #00d1ff; }
+.accent-blue { --accent: #3b82f6; }
+.accent-green { --accent: #10b981; }
+/* Custom hero that uses inline background image + shared overlay */
+.hero-custom {
+  position: relative;
+  min-height: 100vh;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  /* Default accent if none provided via inline style */
+  --accent: #22d3ee;
+}
+.hero-custom::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.2) 30%, rgba(0,0,0,0.45));
+  pointer-events: none;
+}

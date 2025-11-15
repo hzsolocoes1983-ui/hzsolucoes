@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0f19"/>
+      <stop offset="100%" stop-color="#0b1120"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#bg)"/>
+
+  <!-- currency icons and lines -->
+  <g fill="#00bcd4" opacity="0.5">
+    <circle cx="140" cy="640" r="28"/>
+    <circle cx="240" cy="720" r="24"/>
+    <circle cx="180" cy="820" r="20"/>
+    <circle cx="320" cy="860" r="30"/>
+  </g>
+  <g stroke="#00bcd4" stroke-width="2" opacity="0.25">
+    <line x1="0" y1="700" x2="1080" y2="700"/>
+    <line x1="0" y1="760" x2="1080" y2="760"/>
+    <line x1="0" y1="820" x2="1080" y2="820"/>
+  </g>
+</svg>
