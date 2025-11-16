@@ -338,53 +338,65 @@ export default function Dashboard() {
             <Button variant="outline" size="sm">Ver calendário</Button>
             <Button variant="outline" size="sm">Configurar rotina</Button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <Card className={`${isCareMarked('hormones') ? 'bg-green-50 border-green-300' : 'bg-blue-50 border-blue-200'}`}>
-              <CardContent className="p-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Card className={`${isCareMarked('hormones') || isCareMarked('medicine') ? 'bg-green-50 border-green-300' : 'bg-blue-50 border-blue-200'}`}>
+              <CardContent className="p-3 touch-manipulation">
                 <div className="text-center">
                   <div className="text-2xl mb-2">💊</div>
-                  <div className="text-xs font-medium mb-1">Hormônios</div>
-                  <div className="text-xs text-gray-600 mb-1">Horário 07:00</div>
+                  <div className="text-xs font-medium mb-1">Remédios</div>
+                  <div className="text-xs text-gray-600 mb-1">
+                    {isCareMarked('hormones') && isCareMarked('medicine') ? '✓ Ambos concluídos' :
+                     isCareMarked('hormones') ? 'Hormônios: 07:00 ✓' :
+                     isCareMarked('medicine') ? 'Remédio: 08:00 ✓' :
+                     'Hormônios: 07:00 | Remédio: 08:00'}
+                  </div>
                   {loadingCare ? (
                     <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded mb-2">Carregando...</span>
-                  ) : isCareMarked('hormones') ? (
+                  ) : (isCareMarked('hormones') && isCareMarked('medicine')) ? (
                     <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mb-2">✓ Concluído</span>
                   ) : (
                     <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mb-2">Pendente</span>
                   )}
-                  {!isCareMarked('hormones') && (
-                    <Button size="sm" className="w-full text-xs" onClick={() => markCare.mutate('hormones')} disabled={markCare.isPending}>
-                      {markCare.isPending ? '...' : 'Marcar'}
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className={`${isCareMarked('medicine') ? 'bg-green-50 border-green-300' : 'bg-blue-50 border-blue-200'}`}>
-              <CardContent className="p-3">
-                <div className="text-center">
-                  <div className="text-2xl mb-2">💊</div>
-                  <div className="text-xs font-medium mb-1">Remédio</div>
-                  <div className="text-xs text-gray-600 mb-1">Horário 08:00</div>
-                  {loadingCare ? (
-                    <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded mb-2">Carregando...</span>
-                  ) : isCareMarked('medicine') ? (
-                    <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mb-2">✓ Concluído</span>
-                  ) : (
-                    <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mb-2">Pendente</span>
-                  )}
-                  {!isCareMarked('medicine') && (
-                    <Button size="sm" className="w-full text-xs" onClick={() => markCare.mutate('medicine')} disabled={markCare.isPending}>
-                      {markCare.isPending ? '...' : 'Marcar'}
-                    </Button>
+                  {(!isCareMarked('hormones') || !isCareMarked('medicine')) && (
+                    <div className="space-y-1 mt-2">
+                      {!isCareMarked('hormones') && (
+                        <Button 
+                          size="sm" 
+                          className="w-full text-xs touch-manipulation min-h-[32px]" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            markCare.mutate('hormones');
+                          }} 
+                          disabled={markCare.isPending}
+                          style={{ touchAction: 'manipulation' }}
+                        >
+                          {markCare.isPending ? '...' : 'Hormônios'}
+                        </Button>
+                      )}
+                      {!isCareMarked('medicine') && (
+                        <Button 
+                          size="sm" 
+                          className="w-full text-xs touch-manipulation min-h-[32px]" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            markCare.mutate('medicine');
+                          }} 
+                          disabled={markCare.isPending}
+                          style={{ touchAction: 'manipulation' }}
+                        >
+                          {markCare.isPending ? '...' : 'Remédio'}
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
               </CardContent>
             </Card>
 
             <Card className={`${isCareMarked('food') ? 'bg-green-50 border-green-300' : 'bg-green-50 border-green-200'}`}>
-              <CardContent className="p-3">
+              <CardContent className="p-3 touch-manipulation">
                 <div className="text-center">
                   <div className="text-2xl mb-2">🍴</div>
                   <div className="text-xs font-medium mb-1">Alimentação</div>
@@ -394,7 +406,17 @@ export default function Dashboard() {
                   ) : isCareMarked('food') ? (
                     <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mb-2">✓ Concluído</span>
                   ) : null}
-                  <Button size="sm" className="w-full text-xs mt-2" onClick={() => markCare.mutate('food')} disabled={markCare.isPending}>
+                  <Button 
+                    size="sm" 
+                    className="w-full text-xs mt-2 touch-manipulation min-h-[32px]" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      markCare.mutate('food');
+                    }} 
+                    disabled={markCare.isPending}
+                    style={{ touchAction: 'manipulation' }}
+                  >
                     {markCare.isPending ? '...' : isCareMarked('food') ? 'Marcar próxima' : 'Marcar'}
                   </Button>
                 </div>
@@ -402,7 +424,7 @@ export default function Dashboard() {
             </Card>
 
             <Card className="bg-cyan-50 border-cyan-200">
-              <CardContent className="p-3">
+              <CardContent className="p-3 touch-manipulation">
                 <div className="text-center">
                   <div className="text-2xl mb-2">💧</div>
                   <div className="text-xs font-medium mb-1">Água</div>
@@ -413,7 +435,17 @@ export default function Dashboard() {
                   <div className="text-xs text-gray-500 mb-2">
                     {loadingWater ? '' : `${Math.round((waterData.total / 2000) * 100)}% da meta`}
                   </div>
-                  <Button size="sm" className="w-full text-xs" onClick={() => addWater.mutate()} disabled={addWater.isPending}>
+                  <Button 
+                    size="sm" 
+                    className="w-full text-xs touch-manipulation min-h-[32px]" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      addWater.mutate();
+                    }} 
+                    disabled={addWater.isPending}
+                    style={{ touchAction: 'manipulation' }}
+                  >
                     {addWater.isPending ? '...' : '+200ml'}
                   </Button>
                 </div>
@@ -421,7 +453,7 @@ export default function Dashboard() {
             </Card>
 
             <Card className={`${isCareMarked('exercise') ? 'bg-green-50 border-green-300' : 'bg-purple-50 border-purple-200'}`}>
-              <CardContent className="p-3">
+              <CardContent className="p-3 touch-manipulation">
                 <div className="text-center">
                   <div className="text-2xl mb-2">🏋️</div>
                   <div className="text-xs font-medium mb-1">Exercício</div>
@@ -431,7 +463,17 @@ export default function Dashboard() {
                   ) : isCareMarked('exercise') ? (
                     <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mb-2">✓ Concluído</span>
                   ) : null}
-                  <Button size="sm" className="w-full text-xs mt-2" onClick={() => markCare.mutate('exercise')} disabled={markCare.isPending}>
+                  <Button 
+                    size="sm" 
+                    className="w-full text-xs mt-2 touch-manipulation min-h-[32px]" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      markCare.mutate('exercise');
+                    }} 
+                    disabled={markCare.isPending}
+                    style={{ touchAction: 'manipulation' }}
+                  >
                     {markCare.isPending ? '...' : isCareMarked('exercise') ? 'Marcar novamente' : 'Marcar'}
                   </Button>
                 </div>
@@ -506,7 +548,15 @@ export default function Dashboard() {
         <div>
           <h2 className="text-lg font-semibold mb-3 text-gray-700">Atalhos para suas rotinas diárias</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card className="cursor-pointer hover:shadow-md transition" onClick={() => setShowExpenseModal(true)}>
+            <Card 
+              className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowExpenseModal(true);
+              }}
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+            >
               <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-2">
                   <span className="text-pink-600 text-2xl">↓</span>
@@ -515,7 +565,15 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md transition" onClick={() => setShowIncomeModal(true)}>
+            <Card 
+              className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowIncomeModal(true);
+              }}
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+            >
               <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
                   <span className="text-green-600 text-2xl">↑</span>
@@ -524,7 +582,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md transition">
+            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
               <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
                   <span className="text-blue-600 text-xl">🔔</span>
@@ -533,7 +591,15 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md transition" onClick={() => setShowItemModal(true)}>
+            <Card 
+              className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowItemModal(true);
+              }}
+              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
+            >
               <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
                   <span className="text-yellow-600 text-xl">📋</span>
