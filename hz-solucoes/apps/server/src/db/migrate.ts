@@ -1,9 +1,13 @@
-import { client } from './index.js';
-import { sql } from 'drizzle-orm';
+import { createClient } from '@libsql/client';
+
+// Cria o client para migrations
+const url = process.env.DATABASE_URL || 'file:./local.db';
+const authToken = process.env.DATABASE_AUTH_TOKEN;
+const client = createClient({ url, authToken });
 
 export async function initDatabase() {
   // Cria as tabelas se não existirem
-  await client.execute(sql.raw(`
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       whatsapp TEXT NOT NULL UNIQUE,
@@ -13,7 +17,7 @@ export async function initDatabase() {
     )
   `));
 
-  await client.execute(sql.raw(`
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS goals (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -25,7 +29,7 @@ export async function initDatabase() {
     )
   `));
 
-  await client.execute(sql.raw(`
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -40,7 +44,7 @@ export async function initDatabase() {
     )
   `));
 
-  await client.execute(sql.raw(`
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -52,7 +56,7 @@ export async function initDatabase() {
     )
   `));
 
-  await client.execute(sql.raw(`
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS daily_care (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -65,7 +69,7 @@ export async function initDatabase() {
     )
   `));
 
-  await client.execute(sql.raw(`
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS water_intake (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
