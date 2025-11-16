@@ -4,7 +4,7 @@ import '../styles/login.css';
 import { Button } from '@ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@ui/card';
 import { useMutation } from '@tanstack/react-query';
-import { trpc } from '../lib/trpc';
+import { trpcFetch } from '../lib/trpc';
 
 export default function LoginPage() {
   const envHero = import.meta.env.VITE_LOGIN_HERO as string | undefined; // 'blue-arrows' | 'city-sun' | 'currency-dark'
@@ -74,23 +74,17 @@ export default function LoginPage() {
   const login = useMutation({
     mutationFn: async () => {
       const trpcUrl = import.meta.env.VITE_TRPC_URL || '/trpc';
-      console.log('Fazendo login... URL:', trpcUrl);
-      
-      // Bypass temporário - login direto sem backend para testar
-      // TODO: Corrigir chamada tRPC depois
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({
-            token: 'mock-token',
-            user: { whatsapp: '+5500000000000', name: 'Usuário' }
-          });
-        }, 500);
-      });
+      console.log('Fazendo login guest... URL:', trpcUrl);
+
+      // Login sem senha: cria/retorna usuário padrão
+      const result = await trpcFetch<{ token: string; user: any }>('loginGuest', {});
+
+      return result;
     },
     onSuccess: (data: any) => {
       console.log('Login sucesso:', data);
       localStorage.setItem('token', data.token || 'mock-token');
-      localStorage.setItem('user', JSON.stringify(data.user || { whatsapp: '+5500000000000', name: 'Usuário' }));
+      localStorage.setItem('user', JSON.stringify(data.user));
       
       // Usa history.pushState para navegação SPA
       window.history.pushState({}, '', '/dashboard');
@@ -128,6 +122,7 @@ export default function LoginPage() {
           <CardTitle className="brand-title text-center text-2xl font-semibold">HZ Soluções</CardTitle>
         </CardHeader>
         <CardContent className="pt-2">
+          {/* Sem campos: login guest com um clique */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <Button
               onClick={() => {

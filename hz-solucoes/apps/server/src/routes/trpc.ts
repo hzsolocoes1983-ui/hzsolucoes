@@ -34,6 +34,36 @@ export const router = t.router({
       };
     }),
 
+  // Login sem senha (uso familiar)
+  // Cria (se necessário) e retorna um usuário padrão
+  loginGuest: t.procedure
+    .mutation(async () => {
+      const defaultWhatsApp = process.env.DEFAULT_WHATSAPP || 'family@local';
+      const defaultName = process.env.DEFAULT_NAME || 'Família';
+      const defaultPassword = 'nopass';
+
+      let user = await db.select().from(users).where(eq(users.whatsapp, defaultWhatsApp)).get();
+
+      if (!user) {
+        await db.insert(users).values({
+          whatsapp: defaultWhatsApp,
+          name: defaultName,
+          password: defaultPassword,
+          createdAt: new Date(),
+        });
+        user = await db.select().from(users).where(eq(users.whatsapp, defaultWhatsApp)).get();
+      }
+
+      if (!user) {
+        throw new Error('Falha ao criar usuário padrão');
+      }
+
+      return {
+        token: 'token-' + user.id,
+        user: { whatsapp: user.whatsapp, name: user.name, id: user.id }
+      };
+    }),
+
   register: t.procedure
     .input(z.object({ whatsapp: z.string(), name: z.string(), password: z.string() }))
     .mutation(async ({ input }) => {
