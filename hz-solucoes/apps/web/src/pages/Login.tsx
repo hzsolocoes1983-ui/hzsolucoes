@@ -111,13 +111,15 @@ export default function LoginPage() {
 
   return (
     <div className={containerClass} style={containerStyle}>
-      <Card className="glass-dark bg-transparent shadow-none text-white w-full max-w-md rounded-2xl">
+      <Card
+        className="glass-dark !bg-transparent shadow-none text-white w-[92vw] max-w-sm rounded-2xl"
+      >
         <CardHeader className="border-b-0 pb-2">
           <div className="flex justify-center mb-2">
             <img
-              src="/app-icon.svg"
+              src="/app-icon.svg?v=3"
               alt="HZ Soluções"
-              className="h-20 w-20 rounded-2xl shadow-md ring-2 ring-white/30"
+              className="h-16 w-16 rounded-2xl shadow-md ring-2 ring-white/30"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).src = '/icon-192.png';
               }}
@@ -125,20 +127,44 @@ export default function LoginPage() {
           </div>
           <CardTitle className="brand-title text-center text-2xl font-semibold">HZ Soluções</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 pt-2">
-          <Button 
-            onClick={() => {
-              console.log('Botão clicado, iniciando login...');
-              login.mutate();
-            }} 
-            disabled={login.isPending}
-            className="btn-access w-full max-w-xs mx-auto flex items-center justify-center"
-          >
-            {login.isPending ? 'Carregando...' : 'Acessar'}
-          </Button>
-          {/* Acesso rápido sem WhatsApp/Senha */}
+        <CardContent className="pt-2">
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <Button
+              onClick={() => {
+                console.log('Botão clicado, iniciando login...');
+                login.mutate();
+              }}
+              disabled={login.isPending}
+              className="btn-access"
+              style={{
+                background: '#ffffff',
+                color: 'var(--accent, #ff7a00)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                boxShadow: '0 6px 18px rgba(0, 0, 0, 0.25)',
+                height: '44px',
+                width: '100%'
+              }}
+            >
+              {login.isPending ? 'Carregando...' : 'Acessar'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
+      <div
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 12,
+          textAlign: 'center',
+          color: '#DAA520',
+          fontWeight: 600,
+          letterSpacing: '0.3px',
+          zIndex: 50
+        }}
+      >
+        by_La Famiglia
+      </div>
     </div>
   );
 }
