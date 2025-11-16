@@ -15,7 +15,7 @@ export async function initDatabase() {
       password TEXT NOT NULL,
       created_at INTEGER NOT NULL
     )
-  `));
+  `);
 
   await client.execute(`
     CREATE TABLE IF NOT EXISTS goals (
@@ -27,7 +27,7 @@ export async function initDatabase() {
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
-  `));
+  `);
 
   await client.execute(`
     CREATE TABLE IF NOT EXISTS transactions (
@@ -42,7 +42,7 @@ export async function initDatabase() {
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
-  `));
+  `);
 
   await client.execute(`
     CREATE TABLE IF NOT EXISTS items (
@@ -54,7 +54,7 @@ export async function initDatabase() {
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
-  `));
+  `);
 
   await client.execute(`
     CREATE TABLE IF NOT EXISTS daily_care (
@@ -67,7 +67,7 @@ export async function initDatabase() {
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
-  `));
+  `);
 
   await client.execute(`
     CREATE TABLE IF NOT EXISTS water_intake (
@@ -78,7 +78,7 @@ export async function initDatabase() {
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
-  `));
+  `);
 
   console.log('Database initialized');
 }
