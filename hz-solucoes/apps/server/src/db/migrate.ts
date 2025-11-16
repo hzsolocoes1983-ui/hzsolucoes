@@ -23,9 +23,9 @@ export async function initDatabase() {
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
-  `);
+  `));
 
-  await client.execute(`
+  await client.execute(sql.raw(`
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
