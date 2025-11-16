@@ -266,7 +266,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
       {/* Header */}
       <div className="bg-white shadow-sm p-4">
         <div className="flex justify-between items-center mb-4">
