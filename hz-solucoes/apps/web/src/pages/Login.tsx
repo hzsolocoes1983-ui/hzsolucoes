@@ -112,28 +112,27 @@ export default function LoginPage() {
   return (
     <div className={containerClass} style={containerStyle}>
       <Card className="glass-dark bg-transparent shadow-none text-white w-full max-w-md rounded-2xl">
-        <CardHeader className="border-b-0">
+        <CardHeader className="border-b-0 pb-2">
           <div className="flex justify-center mb-2">
             <img
-              src="/icon-192.png"
+              src="/app-icon.svg"
               alt="HZ Soluções"
               className="h-20 w-20 rounded-2xl shadow-md ring-2 ring-white/30"
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = '/app-icon.svg';
+                (e.currentTarget as HTMLImageElement).src = '/icon-192.png';
               }}
             />
           </div>
           <CardTitle className="brand-title text-center text-2xl font-semibold">HZ Soluções</CardTitle>
-          <p className="text-center text-sm text-white/80 mt-1">Mais simples e seguro para você</p>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 pt-2">
           <Button 
             onClick={() => {
               console.log('Botão clicado, iniciando login...');
               login.mutate();
             }} 
             disabled={login.isPending}
-            className="btn-access block w-3/4 mx-auto"
+            className="btn-access w-full max-w-xs mx-auto flex items-center justify-center"
           >
             {login.isPending ? 'Carregando...' : 'Acessar'}
           </Button>

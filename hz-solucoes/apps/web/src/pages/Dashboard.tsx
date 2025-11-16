@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { trpcFetch } from '../lib/trpc';
 
 export default function Dashboard() {
   const userStr = localStorage.getItem('user');
@@ -13,7 +14,6 @@ export default function Dashboard() {
   
   const user = JSON.parse(userStr);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const trpcUrl = import.meta.env.VITE_TRPC_URL || '/trpc';
   const queryClient = useQueryClient();
 
   // Estados dos modais
@@ -30,64 +30,143 @@ export default function Dashboard() {
   const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-  const { data: summary = { revenue: 0, expenses: 0, fixed: 0, balance: 0 }, isLoading } = useQuery({
-    queryKey: ['summary', currentMonth.getFullYear(), currentMonth.getMonth()],
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth() + 1;
+
+  // Resumo financeiro
+  const { data: summary = { revenue: 0, expenses: 0, fixed: 0, balance: 0 }, isLoading, error: summaryError } = useQuery({
+    queryKey: ['summary', year, month, user.id],
     queryFn: async () => {
       try {
-        const year = currentMonth.getFullYear();
-        const month = currentMonth.getMonth() + 1;
+        if (!user?.id) {
+          throw new Error('Usuário não encontrado. Faça login novamente.');
+        }
         
-        const [revenue, expenses] = await Promise.all([
-          fetch(`${trpcUrl}/getMonthlyTotal`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ year, month })
-          }).then(r => r.json()).then(r => r[0]?.result?.data?.json || 0),
-          fetch(`${trpcUrl}/getMonthlyExpensesTotal`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ year, month })
-          }).then(r => r.json()).then(r => r[0]?.result?.data?.json || 0)
+        console.log('Buscando resumo para user:', user.id, 'mês:', month, 'ano:', year);
+        
+        const [revenue, expenses, fixedExpenses] = await Promise.all([
+          trpcFetch<number>('getMonthlyTotal', { year, month, userId: user.id }),
+          trpcFetch<number>('getMonthlyExpensesTotal', { year, month, userId: user.id }),
+          trpcFetch<any[]>('getFixedExpenses', { userId: user.id })
         ]);
+
+        const fixedTotal = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
         return {
           revenue,
           expenses,
-          fixed: 0, // TODO: adicionar endpoint para despesas fixas
-          balance: revenue - expenses
+          fixed: fixedTotal,
+          balance: revenue - expenses - fixedTotal
         };
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erro ao buscar resumo:', error);
+        // Mostra erro no console e retorna valores padrão
+        if (error.message) {
+          console.error('Detalhes do erro:', error.message);
+        }
         return { revenue: 0, expenses: 0, fixed: 0, balance: 0 };
       }
-    }
+    },
+    retry: 1,
+  });
+
+  // Transações recentes (últimas 5 despesas)
+  const { data: recentExpenses = [], isLoading: loadingExpenses } = useQuery({
+    queryKey: ['recentExpenses', user.id],
+    queryFn: async () => {
+      try {
+        if (!user?.id) return [];
+        const transactions = await trpcFetch<any[]>('getTransactions', {
+          userId: user.id,
+          type: 'expense'
+        });
+        return transactions.slice(0, 5);
+      } catch (error: any) {
+        console.error('Erro ao buscar despesas:', error);
+        return [];
+      }
+    },
+    retry: 1,
+  });
+
+  // Itens pendentes
+  const { data: pendingItems = [], isLoading: loadingItems } = useQuery({
+    queryKey: ['pendingItems', user.id],
+    queryFn: async () => {
+      try {
+        if (!user?.id) return [];
+        return await trpcFetch<any[]>('getItems', {
+          userId: user.id,
+          status: 'pending'
+        });
+      } catch (error: any) {
+        console.error('Erro ao buscar itens:', error);
+        return [];
+      }
+    },
+    retry: 1,
+  });
+
+  // Consumo de água do dia
+  const { data: waterData = { total: 0, intakes: [] }, isLoading: loadingWater } = useQuery({
+    queryKey: ['waterIntake', user.id, new Date().toDateString()],
+    queryFn: async () => {
+      try {
+        if (!user?.id) return { total: 0, intakes: [] };
+        // tRPC espera Date, mas vamos garantir que seja serializado corretamente
+        const today = new Date();
+        return await trpcFetch<{ total: number; intakes: any[] }>('getWaterIntake', {
+          userId: user.id,
+          date: today.toISOString() as any // Será convertido pelo tRPC
+        });
+      } catch (error: any) {
+        console.error('Erro ao buscar água:', error);
+        return { total: 0, intakes: [] };
+      }
+    },
+    retry: 1,
+  });
+
+  // Cuidados do dia
+  const { data: dailyCareData = [], isLoading: loadingCare } = useQuery({
+    queryKey: ['dailyCare', user.id, new Date().toDateString()],
+    queryFn: async () => {
+      try {
+        if (!user?.id) return [];
+        const today = new Date();
+        return await trpcFetch<any[]>('getDailyCare', {
+          userId: user.id,
+          date: today.toISOString() as any // Será convertido pelo tRPC
+        });
+      } catch (error: any) {
+        console.error('Erro ao buscar cuidados:', error);
+        return [];
+      }
+    },
+    retry: 1,
   });
 
   const formatCurrency = (value: number) => 
     value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+  // Helper para verificar se um cuidado foi marcado hoje
+  const isCareMarked = (type: string) => {
+    return dailyCareData.some((care: any) => care.type === type && care.completed);
+  };
+
   // Mutations
   const addExpense = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${trpcUrl}/addTransaction`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          "0": {
-            "json": {
-              userId: user.id,
-              type: 'expense',
-              amount: parseFloat(expenseAmount),
-              description: expenseDesc,
-            }
-          }
-        })
+      await trpcFetch('addTransaction', {
+        userId: user.id,
+        type: 'expense',
+        amount: parseFloat(expenseAmount),
+        description: expenseDesc,
       });
-      if (!response.ok) throw new Error('Erro ao adicionar despesa');
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['summary'] });
+      queryClient.invalidateQueries({ queryKey: ['recentExpenses'] });
       setShowExpenseModal(false);
       setExpenseAmount('');
       setExpenseDesc('');
@@ -100,25 +179,16 @@ export default function Dashboard() {
 
   const addIncome = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${trpcUrl}/addTransaction`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          "0": {
-            "json": {
-              userId: user.id,
-              type: 'income',
-              amount: parseFloat(incomeAmount),
-              description: incomeDesc,
-            }
-          }
-        })
+      await trpcFetch('addTransaction', {
+        userId: user.id,
+        type: 'income',
+        amount: parseFloat(incomeAmount),
+        description: incomeDesc,
       });
-      if (!response.ok) throw new Error('Erro ao adicionar receita');
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['summary'] });
+      queryClient.invalidateQueries({ queryKey: ['recentExpenses'] });
       setShowIncomeModal(false);
       setIncomeAmount('');
       setIncomeDesc('');
@@ -131,23 +201,14 @@ export default function Dashboard() {
 
   const addItem = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${trpcUrl}/addItem`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          "0": {
-            "json": {
-              userId: user.id,
-              name: itemName,
-              price: itemPrice ? parseFloat(itemPrice) : undefined,
-            }
-          }
-        })
+      await trpcFetch('addItem', {
+        userId: user.id,
+        name: itemName,
+        price: itemPrice ? parseFloat(itemPrice) : undefined,
       });
-      if (!response.ok) throw new Error('Erro ao adicionar item');
-      return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingItems'] });
       setShowItemModal(false);
       setItemName('');
       setItemPrice('');
@@ -160,46 +221,34 @@ export default function Dashboard() {
 
   const addWater = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`${trpcUrl}/addWaterIntake`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          "0": {
-            "json": {
-              userId: user.id,
-              amount: 200,
-            }
-          }
-        })
+      await trpcFetch('addWaterIntake', {
+        userId: user.id,
+        amount: 200,
       });
-      if (!response.ok) throw new Error('Erro ao registrar água');
-      return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['waterIntake'] });
       alert('200ml de água adicionado!');
+    },
+    onError: (error: any) => {
+      alert('Erro: ' + error.message);
     }
   });
 
   const markCare = useMutation({
     mutationFn: async (type: string) => {
-      const response = await fetch(`${trpcUrl}/markDailyCare`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          "0": {
-            "json": {
-              userId: user.id,
-              type,
-              scheduledTime: '07:00',
-            }
-          }
-        })
+      await trpcFetch('markDailyCare', {
+        userId: user.id,
+        type,
+        scheduledTime: '07:00',
       });
-      if (!response.ok) throw new Error('Erro ao marcar');
-      return response.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dailyCare'] });
       alert('Marcado com sucesso!');
+    },
+    onError: (error: any) => {
+      alert('Erro: ' + error.message);
     }
   });
 
@@ -248,6 +297,32 @@ export default function Dashboard() {
       </div>
 
       <div className="p-4 space-y-6 max-w-6xl mx-auto">
+        {/* Mensagem de erro se houver */}
+        {summaryError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-800 text-sm font-medium">
+              ⚠️ Erro ao carregar dados
+            </p>
+            <p className="text-red-700 text-xs mt-1">
+              Verifique o console do navegador (F12) para mais detalhes.
+              {!user?.id && ' Usuário não encontrado. Faça login novamente.'}
+            </p>
+            <p className="text-red-600 text-xs mt-2">
+              URL do backend: {import.meta.env.VITE_TRPC_URL || '/trpc'}
+            </p>
+          </div>
+        )}
+        
+        {/* Debug info (apenas em desenvolvimento) */}
+        {import.meta.env.DEV && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs">
+            <p className="text-blue-800 font-medium">🔍 Debug Info:</p>
+            <p className="text-blue-700">User ID: {user?.id || 'Não encontrado'}</p>
+            <p className="text-blue-700">TRPC URL: {import.meta.env.VITE_TRPC_URL || '/trpc'}</p>
+            <p className="text-blue-700">Mês/Ano: {month}/{year}</p>
+          </div>
+        )}
+        
         {/* Cuidados do Dia */}
         <div>
           <div className="flex justify-between items-center mb-3">
@@ -264,42 +339,63 @@ export default function Dashboard() {
             <Button variant="outline" size="sm">Configurar rotina</Button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <Card className="bg-blue-50 border-blue-200">
+            <Card className={`${isCareMarked('hormones') ? 'bg-green-50 border-green-300' : 'bg-blue-50 border-blue-200'}`}>
               <CardContent className="p-3">
                 <div className="text-center">
                   <div className="text-2xl mb-2">💊</div>
                   <div className="text-xs font-medium mb-1">Hormônios</div>
                   <div className="text-xs text-gray-600 mb-1">Horário 07:00</div>
-                  <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mb-2">Pendente</span>
-                  <Button size="sm" className="w-full text-xs" onClick={() => markCare.mutate('hormones')} disabled={markCare.isPending}>
-                    {markCare.isPending ? '...' : 'Marcar'}
-                  </Button>
+                  {loadingCare ? (
+                    <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded mb-2">Carregando...</span>
+                  ) : isCareMarked('hormones') ? (
+                    <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mb-2">✓ Concluído</span>
+                  ) : (
+                    <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mb-2">Pendente</span>
+                  )}
+                  {!isCareMarked('hormones') && (
+                    <Button size="sm" className="w-full text-xs" onClick={() => markCare.mutate('hormones')} disabled={markCare.isPending}>
+                      {markCare.isPending ? '...' : 'Marcar'}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-blue-50 border-blue-200">
+            <Card className={`${isCareMarked('medicine') ? 'bg-green-50 border-green-300' : 'bg-blue-50 border-blue-200'}`}>
               <CardContent className="p-3">
                 <div className="text-center">
                   <div className="text-2xl mb-2">💊</div>
                   <div className="text-xs font-medium mb-1">Remédio</div>
                   <div className="text-xs text-gray-600 mb-1">Horário 08:00</div>
-                  <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mb-2">Pendente</span>
-                  <Button size="sm" className="w-full text-xs" onClick={() => markCare.mutate('hormones')} disabled={markCare.isPending}>
-                    {markCare.isPending ? '...' : 'Marcar'}
-                  </Button>
+                  {loadingCare ? (
+                    <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded mb-2">Carregando...</span>
+                  ) : isCareMarked('medicine') ? (
+                    <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mb-2">✓ Concluído</span>
+                  ) : (
+                    <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded mb-2">Pendente</span>
+                  )}
+                  {!isCareMarked('medicine') && (
+                    <Button size="sm" className="w-full text-xs" onClick={() => markCare.mutate('medicine')} disabled={markCare.isPending}>
+                      {markCare.isPending ? '...' : 'Marcar'}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-green-50 border-green-200">
+            <Card className={`${isCareMarked('food') ? 'bg-green-50 border-green-300' : 'bg-green-50 border-green-200'}`}>
               <CardContent className="p-3">
                 <div className="text-center">
                   <div className="text-2xl mb-2">🍴</div>
                   <div className="text-xs font-medium mb-1">Alimentação</div>
                   <div className="text-xs text-gray-600 mb-1">Próxima: Café às 08:30</div>
+                  {loadingCare ? (
+                    <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded mb-2">Carregando...</span>
+                  ) : isCareMarked('food') ? (
+                    <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mb-2">✓ Concluído</span>
+                  ) : null}
                   <Button size="sm" className="w-full text-xs mt-2" onClick={() => markCare.mutate('food')} disabled={markCare.isPending}>
-                    {markCare.isPending ? '...' : 'Marcar próxima'}
+                    {markCare.isPending ? '...' : isCareMarked('food') ? 'Marcar próxima' : 'Marcar'}
                   </Button>
                 </div>
               </CardContent>
@@ -311,7 +407,12 @@ export default function Dashboard() {
                   <div className="text-2xl mb-2">💧</div>
                   <div className="text-xs font-medium mb-1">Água</div>
                   <div className="text-xs text-gray-600 mb-1">Meta 2000ml</div>
-                  <div className="text-xs font-semibold mb-2">0ml / 2000ml</div>
+                  <div className="text-xs font-semibold mb-2">
+                    {loadingWater ? '...' : `${waterData.total}ml / 2000ml`}
+                  </div>
+                  <div className="text-xs text-gray-500 mb-2">
+                    {loadingWater ? '' : `${Math.round((waterData.total / 2000) * 100)}% da meta`}
+                  </div>
                   <Button size="sm" className="w-full text-xs" onClick={() => addWater.mutate()} disabled={addWater.isPending}>
                     {addWater.isPending ? '...' : '+200ml'}
                   </Button>
@@ -319,13 +420,20 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="bg-purple-50 border-purple-200">
+            <Card className={`${isCareMarked('exercise') ? 'bg-green-50 border-green-300' : 'bg-purple-50 border-purple-200'}`}>
               <CardContent className="p-3">
                 <div className="text-center">
                   <div className="text-2xl mb-2">🏋️</div>
                   <div className="text-xs font-medium mb-1">Exercício</div>
                   <div className="text-xs text-gray-600 mb-1">Horário 11:10</div>
-                  <Button size="sm" className="w-full text-xs mt-2">Marcar</Button>
+                  {loadingCare ? (
+                    <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded mb-2">Carregando...</span>
+                  ) : isCareMarked('exercise') ? (
+                    <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mb-2">✓ Concluído</span>
+                  ) : null}
+                  <Button size="sm" className="w-full text-xs mt-2" onClick={() => markCare.mutate('exercise')} disabled={markCare.isPending}>
+                    {markCare.isPending ? '...' : isCareMarked('exercise') ? 'Marcar novamente' : 'Marcar'}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -431,7 +539,9 @@ export default function Dashboard() {
                   <span className="text-yellow-600 text-xl">📋</span>
                 </div>
                 <div className="text-sm font-medium text-gray-700">Pendentes e comprados</div>
-                <div className="text-xs text-gray-500 mt-1">0</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {loadingItems ? '...' : `${pendingItems.length} pendente${pendingItems.length !== 1 ? 's' : ''}`}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -446,7 +556,30 @@ export default function Dashboard() {
                 <CardTitle className="text-base">Últimas Despesas</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-gray-500">Nenhuma despesa</div>
+                {loadingExpenses ? (
+                  <div className="text-sm text-gray-500">Carregando...</div>
+                ) : recentExpenses.length === 0 ? (
+                  <div className="text-sm text-gray-500">Nenhuma despesa registrada</div>
+                ) : (
+                  <div className="space-y-2">
+                    {recentExpenses.map((expense: any) => (
+                      <div key={expense.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-800">
+                            {expense.description || 'Sem descrição'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(expense.date).toLocaleDateString('pt-BR')}
+                            {expense.category && ` • ${expense.category}`}
+                          </div>
+                        </div>
+                        <div className="text-sm font-semibold text-red-600">
+                          {formatCurrency(expense.amount)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -455,7 +588,34 @@ export default function Dashboard() {
                 <CardTitle className="text-base">Itens Pendentes</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-gray-500">Nenhum item</div>
+                {loadingItems ? (
+                  <div className="text-sm text-gray-500">Carregando...</div>
+                ) : pendingItems.length === 0 ? (
+                  <div className="text-sm text-gray-500">Nenhum item pendente</div>
+                ) : (
+                  <div className="space-y-2">
+                    {pendingItems.slice(0, 5).map((item: any) => (
+                      <div key={item.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-800">{item.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(item.createdAt).toLocaleDateString('pt-BR')}
+                          </div>
+                        </div>
+                        {item.price && (
+                          <div className="text-sm font-semibold text-gray-600">
+                            {formatCurrency(item.price)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {pendingItems.length > 5 && (
+                      <div className="text-xs text-gray-500 text-center pt-2">
+                        +{pendingItems.length - 5} mais
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
