@@ -88,25 +88,25 @@ export const router = t.router({
       type: z.enum(['income', 'expense']).optional(),
     }))
     .query(async ({ input }) => {
-      let query = db.select().from(transactions).where(eq(transactions.userId, input.userId));
+      const conditions = [eq(transactions.userId, input.userId)];
 
       if (input.year && input.month) {
         const startDate = new Date(input.year, input.month - 1, 1);
         const endDate = new Date(input.year, input.month, 0, 23, 59, 59);
-        query = query.where(
-          and(
-            eq(transactions.userId, input.userId),
-            gte(transactions.date, startDate),
-            lt(transactions.date, endDate)
-          )
-        ) as any;
+        conditions.push(gte(transactions.date, startDate));
+        conditions.push(lt(transactions.date, endDate));
       }
 
       if (input.type) {
-        query = query.where(eq(transactions.type, input.type)) as any;
+        conditions.push(eq(transactions.type, input.type));
       }
 
-      const result = await query.orderBy(desc(transactions.date)).all();
+      const result = await db.select()
+        .from(transactions)
+        .where(and(...conditions))
+        .orderBy(desc(transactions.date))
+        .all();
+      
       return result;
     }),
 
@@ -114,11 +114,12 @@ export const router = t.router({
   getGoals: t.procedure
     .input(z.object({ userId: z.number().optional() }))
     .query(async ({ input }) => {
-      let query = db.select().from(goals);
+      let allGoals;
       if (input.userId) {
-        query = query.where(eq(goals.userId, input.userId)) as any;
+        allGoals = await db.select().from(goals).where(eq(goals.userId, input.userId)).all();
+      } else {
+        allGoals = await db.select().from(goals).all();
       }
-      const allGoals = await query.all();
       return allGoals.map(g => ({
         id: g.id,
         name: g.name,
@@ -147,11 +148,11 @@ export const router = t.router({
   getItems: t.procedure
     .input(z.object({ userId: z.number(), status: z.enum(['pending', 'bought']).optional() }))
     .query(async ({ input }) => {
-      let query = db.select().from(items).where(eq(items.userId, input.userId));
+      const conditions = [eq(items.userId, input.userId)];
       if (input.status) {
-        query = query.where(eq(items.status, input.status)) as any;
+        conditions.push(eq(items.status, input.status));
       }
-      return await query.all();
+      return await db.select().from(items).where(and(...conditions)).all();
     }),
 
   addItem: t.procedure
@@ -188,21 +189,21 @@ export const router = t.router({
       const startDate = new Date(input.year, input.month - 1, 1);
       const endDate = new Date(input.year, input.month, 0, 23, 59, 59);
       
-      let query = db.select()
-        .from(transactions)
-        .where(
-          and(
-            eq(transactions.type, 'income'),
-            gte(transactions.date, startDate),
-            lt(transactions.date, endDate)
-          )
-        );
+      const conditions = [
+        eq(transactions.type, 'income'),
+        gte(transactions.date, startDate),
+        lt(transactions.date, endDate)
+      ];
 
       if (input.userId) {
-        query = query.where(eq(transactions.userId, input.userId)) as any;
+        conditions.push(eq(transactions.userId, input.userId));
       }
 
-      const income = await query.all();
+      const income = await db.select()
+        .from(transactions)
+        .where(and(...conditions))
+        .all();
+      
       const total = income.reduce((sum, t) => sum + t.amount, 0);
       return total;
     }),
@@ -213,21 +214,21 @@ export const router = t.router({
       const startDate = new Date(input.year, input.month - 1, 1);
       const endDate = new Date(input.year, input.month, 0, 23, 59, 59);
       
-      let query = db.select()
-        .from(transactions)
-        .where(
-          and(
-            eq(transactions.type, 'expense'),
-            gte(transactions.date, startDate),
-            lt(transactions.date, endDate)
-          )
-        );
+      const conditions = [
+        eq(transactions.type, 'expense'),
+        gte(transactions.date, startDate),
+        lt(transactions.date, endDate)
+      ];
 
       if (input.userId) {
-        query = query.where(eq(transactions.userId, input.userId)) as any;
+        conditions.push(eq(transactions.userId, input.userId));
       }
 
-      const expenses = await query.all();
+      const expenses = await db.select()
+        .from(transactions)
+        .where(and(...conditions))
+        .all();
+      
       const total = expenses.reduce((sum, t) => sum + t.amount, 0);
       return total;
     }),
@@ -235,20 +236,19 @@ export const router = t.router({
   getFixedExpenses: t.procedure
     .input(z.object({ userId: z.number().optional() }))
     .query(async ({ input }) => {
-      let query = db.select()
-        .from(transactions)
-        .where(
-          and(
-            eq(transactions.type, 'expense'),
-            eq(transactions.isFixed, true)
-          )
-        );
+      const conditions = [
+        eq(transactions.type, 'expense'),
+        eq(transactions.isFixed, true)
+      ];
 
       if (input.userId) {
-        query = query.where(eq(transactions.userId, input.userId)) as any;
+        conditions.push(eq(transactions.userId, input.userId));
       }
 
-      return await query.all();
+      return await db.select()
+        .from(transactions)
+        .where(and(...conditions))
+        .all();
     }),
 
   // Relatórios
@@ -258,25 +258,24 @@ export const router = t.router({
       const startDate = new Date(input.year, input.month - 1, 1);
       const endDate = new Date(input.year, input.month, 0, 23, 59, 59);
       
-      let query = db.select({
+      const conditions = [
+        eq(transactions.type, 'expense'),
+        gte(transactions.date, startDate),
+        lt(transactions.date, endDate)
+      ];
+
+      if (input.userId) {
+        conditions.push(eq(transactions.userId, input.userId));
+      }
+
+      return await db.select({
         category: transactions.category,
         total: sql<number>`SUM(${transactions.amount})`,
       })
         .from(transactions)
-        .where(
-          and(
-            eq(transactions.type, 'expense'),
-            gte(transactions.date, startDate),
-            lt(transactions.date, endDate)
-          )
-        )
-        .groupBy(transactions.category);
-
-      if (input.userId) {
-        query = query.where(eq(transactions.userId, input.userId)) as any;
-      }
-
-      return await query.all();
+        .where(and(...conditions))
+        .groupBy(transactions.category)
+        .all();
     }),
 
   getExpensesByUser: t.procedure
@@ -319,21 +318,20 @@ export const router = t.router({
       const endOfDay = new Date(targetDate);
       endOfDay.setHours(23, 59, 59, 999);
 
-      let query = db.select()
-        .from(dailyCare)
-        .where(
-          and(
-            eq(dailyCare.userId, input.userId),
-            gte(dailyCare.date, startOfDay),
-            lt(dailyCare.date, endOfDay)
-          )
-        );
+      const conditions = [
+        eq(dailyCare.userId, input.userId),
+        gte(dailyCare.date, startOfDay),
+        lt(dailyCare.date, endOfDay)
+      ];
 
       if (input.type) {
-        query = query.where(eq(dailyCare.type, input.type)) as any;
+        conditions.push(eq(dailyCare.type, input.type));
       }
 
-      return await query.all();
+      return await db.select()
+        .from(dailyCare)
+        .where(and(...conditions))
+        .all();
     }),
 
   markDailyCare: t.procedure

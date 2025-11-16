@@ -1,8 +1,9 @@
-import { db } from './index.js';
+import { client } from './index.js';
+import { sql } from 'drizzle-orm';
 
 export async function initDatabase() {
   // Cria as tabelas se não existirem
-  await db.run(`
+  await client.execute(sql.raw(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       whatsapp TEXT NOT NULL UNIQUE,
@@ -10,9 +11,9 @@ export async function initDatabase() {
       password TEXT NOT NULL,
       created_at INTEGER NOT NULL
     )
-  `);
+  `));
 
-  await db.run(`
+  await client.execute(sql.raw(`
     CREATE TABLE IF NOT EXISTS goals (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -24,7 +25,7 @@ export async function initDatabase() {
     )
   `);
 
-  await db.run(`
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -37,9 +38,9 @@ export async function initDatabase() {
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
-  `);
+  `));
 
-  await db.run(`
+  await client.execute(sql.raw(`
     CREATE TABLE IF NOT EXISTS items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -49,9 +50,9 @@ export async function initDatabase() {
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
-  `);
+  `));
 
-  await db.run(`
+  await client.execute(sql.raw(`
     CREATE TABLE IF NOT EXISTS daily_care (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -62,9 +63,9 @@ export async function initDatabase() {
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
-  `);
+  `));
 
-  await db.run(`
+  await client.execute(sql.raw(`
     CREATE TABLE IF NOT EXISTS water_intake (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -73,7 +74,7 @@ export async function initDatabase() {
       created_at INTEGER NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
-  `);
+  `));
 
   console.log('Database initialized');
 }
