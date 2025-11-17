@@ -5,6 +5,83 @@ import { eq, and, gte, lt, desc } from 'drizzle-orm';
 
 const router = express.Router();
 
+// Configuração para WhatsApp Business Cloud API (Meta)
+const META_API_VERSION = process.env.WHATSAPP_API_VERSION || 'v20.0';
+const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID; // ex: 1234567890
+const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN; // token permanente/de sistema
+const WHATSAPP_VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN; // verificação de webhook
+
+// Verificação de webhook (Meta)
+router.get('/webhook', (req: Request, res: Response) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  console.log('Webhook verification request:', { mode, token: token ? '***' : 'missing', challenge });
+
+  // Se não há verify token configurado, aceita qualquer token (desenvolvimento)
+  if (!WHATSAPP_VERIFY_TOKEN) {
+    console.warn('WHATSAPP_VERIFY_TOKEN não configurado - aceitando qualquer token (modo desenvolvimento)');
+    if (mode === 'subscribe' && challenge) {
+      return res.status(200).send(challenge);
+    }
+  } else {
+    // Modo produção: verifica token
+    if (mode === 'subscribe' && token === WHATSAPP_VERIFY_TOKEN) {
+      console.log('Webhook verification successful');
+      return res.status(200).send(challenge);
+    }
+  }
+  
+  console.log('Webhook verification failed');
+  return res.sendStatus(403);
+});
+
+// Envia mensagem de texto pelo WhatsApp (Meta)
+async function sendWhatsAppText(to: string, text: string) {
+  if (!WHATSAPP_PHONE_ID || !WHATSAPP_ACCESS_TOKEN) {
+    console.warn('WhatsApp envs ausentes: WHATSAPP_PHONE_ID/WHATSAPP_ACCESS_TOKEN');
+    return;
+  }
+  const url = `https://graph.facebook.com/${META_API_VERSION}/${WHATSAPP_PHONE_ID}/messages`;
+  const payload = {
+    messaging_product: 'whatsapp',
+    to,
+    type: 'text',
+    text: { body: text },
+  };
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!resp.ok) {
+    const err = await resp.text();
+    console.error('Falha ao enviar WhatsApp:', resp.status, err);
+  }
+}
+
+// Extrai { from, body } do payload do Meta
+function extractMetaMessage(req: Request): { from: string; body: string } | null {
+  const entry = (req.body?.entry || [])[0];
+  const changes = (entry?.changes || [])[0];
+  const value = changes?.value;
+  const messages = value?.messages;
+  const contacts = value?.contacts;
+  if (!messages || !messages[0] || !contacts || !contacts[0]) return null;
+  const msg = messages[0];
+  const from = contacts[0].wa_id;
+  let body = '';
+  if (msg.type === 'text') {
+    body = msg.text?.body || '';
+  } else if (msg.type === 'interactive') {
+    body = msg.interactive?.button_reply?.title || msg.interactive?.list_reply?.title || '';
+  }
+  return { from, body };
+}
 // Parser de comandos do WhatsApp
 function parseCommand(message: string): { command: string; args: string[] } {
   const parts = message.trim().toLowerCase().split(/\s+/);
@@ -27,7 +104,20 @@ function categorizeExpense(description: string): string {
 // Webhook para receber mensagens do WhatsApp
 router.post('/webhook', async (req: Request, res: Response) => {
   try {
-    const { from, body } = req.body;
+    let from: string | undefined;
+    let body: string | undefined;
+
+    if (req.body?.object === 'whatsapp_business_account') {
+      const metaMsg = extractMetaMessage(req);
+      if (metaMsg) {
+        from = metaMsg.from;
+        body = metaMsg.body;
+      }
+    } else {
+      const payload = req.body as any;
+      from = payload?.from;
+      body = payload?.body;
+    }
     
     if (!from || !body) {
       return res.status(400).json({ error: 'Missing from or body' });
@@ -258,8 +348,13 @@ router.post('/webhook', async (req: Request, res: Response) => {
         response = `❓ Comando não reconhecido: "${command}"\n\nDigite *ajuda* para ver os comandos disponíveis.`;
     }
 
-    // Aqui você enviaria a resposta de volta para o WhatsApp
-    // Por enquanto, apenas retorna a resposta
+    // Tenta enviar a resposta pelo WhatsApp (Meta)
+    try {
+      await sendWhatsAppText(from, response);
+    } catch (e) {
+      console.warn('Não foi possível enviar mensagem WhatsApp:', (e as any)?.message || e);
+    }
+
     res.json({ 
       success: true, 
       response,

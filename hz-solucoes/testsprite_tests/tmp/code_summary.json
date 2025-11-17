@@ -1,0 +1,526 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "Node.js",
+    "Express",
+    "tRPC",
+    "React",
+    "Vite",
+    "Drizzle ORM",
+    "LibSQL",
+    "WhatsApp Business Cloud API",
+    "React Query",
+    "React Router"
+  ],
+  "features": [
+    {
+      "name": "Authentication",
+      "description": "Sistema de autenticação com login guest (sem senha) e login tradicional com WhatsApp/senha. Criação automática de usuários via WhatsApp.",
+      "files": [
+        "hz-solucoes/apps/server/src/routes/trpc.ts",
+        "hz-solucoes/apps/server/src/routes/auth.ts",
+        "hz-solucoes/apps/web/src/pages/Login.tsx"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/trpc/login": {
+            "post": {
+              "summary": "Login com WhatsApp e senha",
+              "requestBody": {
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "whatsapp": { "type": "string" },
+                        "password": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Token e dados do usuário",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "token": { "type": "string" },
+                          "user": { "type": "object" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/trpc/loginGuest": {
+            "post": {
+              "summary": "Login sem senha (cria/retorna usuário padrão)",
+              "requestBody": {
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object"
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Token e dados do usuário padrão"
+                }
+              }
+            }
+          },
+          "/trpc/register": {
+            "post": {
+              "summary": "Registro de novo usuário",
+              "requestBody": {
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "whatsapp": { "type": "string" },
+                        "name": { "type": "string" },
+                        "password": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Financial Transactions",
+      "description": "Sistema completo de transações financeiras (receitas e despesas) com auto-categorização, filtros por período, e suporte a despesas fixas mensais.",
+      "files": [
+        "hz-solucoes/apps/server/src/routes/trpc.ts",
+        "hz-solucoes/apps/web/src/pages/Dashboard.tsx"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/trpc/addTransaction": {
+            "post": {
+              "summary": "Adiciona transação (receita ou despesa)",
+              "requestBody": {
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "userId": { "type": "number" },
+                        "type": { "type": "string", "enum": ["income", "expense"] },
+                        "amount": { "type": "number" },
+                        "description": { "type": "string" },
+                        "category": { "type": "string" },
+                        "isFixed": { "type": "boolean" },
+                        "date": { "type": "string", "format": "date-time" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/trpc/getTransactions": {
+            "get": {
+              "summary": "Lista transações com filtros",
+              "parameters": [
+                { "name": "userId", "in": "query", "required": true, "schema": { "type": "number" } },
+                { "name": "year", "in": "query", "schema": { "type": "number" } },
+                { "name": "month", "in": "query", "schema": { "type": "number" } },
+                { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["income", "expense"] } }
+              ]
+            }
+          },
+          "/trpc/getMonthlyTotal": {
+            "get": {
+              "summary": "Total de receitas do mês",
+              "parameters": [
+                { "name": "year", "in": "query", "required": true, "schema": { "type": "number" } },
+                { "name": "month", "in": "query", "required": true, "schema": { "type": "number" } },
+                { "name": "userId", "in": "query", "schema": { "type": "number" } }
+              ]
+            }
+          },
+          "/trpc/getMonthlyExpensesTotal": {
+            "get": {
+              "summary": "Total de despesas do mês",
+              "parameters": [
+                { "name": "year", "in": "query", "required": true, "schema": { "type": "number" } },
+                { "name": "month", "in": "query", "required": true, "schema": { "type": "number" } },
+                { "name": "userId", "in": "query", "schema": { "type": "number" } }
+              ]
+            }
+          },
+          "/trpc/getFixedExpenses": {
+            "get": {
+              "summary": "Lista despesas fixas",
+              "parameters": [
+                { "name": "userId", "in": "query", "schema": { "type": "number" } }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Financial Reports",
+      "description": "Relatórios financeiros por categoria e por usuário, com agregações e análises mensais.",
+      "files": [
+        "hz-solucoes/apps/server/src/routes/trpc.ts"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/trpc/getExpensesByCategory": {
+            "get": {
+              "summary": "Despesas agrupadas por categoria",
+              "parameters": [
+                { "name": "year", "in": "query", "required": true, "schema": { "type": "number" } },
+                { "name": "month", "in": "query", "required": true, "schema": { "type": "number" } },
+                { "name": "userId", "in": "query", "schema": { "type": "number" } }
+              ]
+            }
+          },
+          "/trpc/getExpensesByUser": {
+            "get": {
+              "summary": "Despesas agrupadas por usuário",
+              "parameters": [
+                { "name": "year", "in": "query", "required": true, "schema": { "type": "number" } },
+                { "name": "month", "in": "query", "required": true, "schema": { "type": "number" } }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Financial Goals",
+      "description": "Sistema de metas financeiras com valores alvo e progresso atual.",
+      "files": [
+        "hz-solucoes/apps/server/src/routes/trpc.ts"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/trpc/getGoals": {
+            "get": {
+              "summary": "Lista metas financeiras",
+              "parameters": [
+                { "name": "userId", "in": "query", "schema": { "type": "number" } }
+              ]
+            }
+          },
+          "/trpc/addGoal": {
+            "post": {
+              "summary": "Cria nova meta financeira",
+              "requestBody": {
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "userId": { "type": "number" },
+                        "name": { "type": "string" },
+                        "targetAmount": { "type": "number" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Shopping List",
+      "description": "Lista de compras com itens pendentes e comprados, com preços opcionais.",
+      "files": [
+        "hz-solucoes/apps/server/src/routes/trpc.ts"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/trpc/getItems": {
+            "get": {
+              "summary": "Lista itens da lista de compras",
+              "parameters": [
+                { "name": "userId", "in": "query", "required": true, "schema": { "type": "number" } },
+                { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "bought"] } }
+              ]
+            }
+          },
+          "/trpc/addItem": {
+            "post": {
+              "summary": "Adiciona item à lista de compras",
+              "requestBody": {
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "userId": { "type": "number" },
+                        "name": { "type": "string" },
+                        "price": { "type": "number" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/trpc/updateItemStatus": {
+            "post": {
+              "summary": "Atualiza status do item (pending/bought)",
+              "requestBody": {
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "number" },
+                        "status": { "type": "string", "enum": ["pending", "bought"] }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Daily Care",
+      "description": "Sistema de cuidados diários (remédios, alimentação, exercícios) com marcação de conclusão.",
+      "files": [
+        "hz-solucoes/apps/server/src/routes/trpc.ts",
+        "hz-solucoes/apps/web/src/pages/Dashboard.tsx"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/trpc/getDailyCare": {
+            "get": {
+              "summary": "Lista cuidados do dia",
+              "parameters": [
+                { "name": "userId", "in": "query", "required": true, "schema": { "type": "number" } },
+                { "name": "date", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+                { "name": "type", "in": "query", "schema": { "type": "string" } }
+              ]
+            }
+          },
+          "/trpc/markDailyCare": {
+            "post": {
+              "summary": "Marca cuidado como concluído",
+              "requestBody": {
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "userId": { "type": "number" },
+                        "type": { "type": "string" },
+                        "scheduledTime": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Water Intake",
+      "description": "Sistema de registro e acompanhamento de consumo de água diário com meta de 2000ml.",
+      "files": [
+        "hz-solucoes/apps/server/src/routes/trpc.ts",
+        "hz-solucoes/apps/web/src/pages/Dashboard.tsx"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/trpc/getWaterIntake": {
+            "get": {
+              "summary": "Consumo de água do dia",
+              "parameters": [
+                { "name": "userId", "in": "query", "required": true, "schema": { "type": "number" } },
+                { "name": "date", "in": "query", "schema": { "type": "string", "format": "date-time" } }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Total e lista de consumos",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "total": { "type": "number" },
+                          "intakes": { "type": "array" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "/trpc/addWaterIntake": {
+            "post": {
+              "summary": "Registra consumo de água (ml)",
+              "requestBody": {
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "userId": { "type": "number" },
+                        "amount": { "type": "number" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "WhatsApp Integration",
+      "description": "Webhook do WhatsApp para receber mensagens, processar comandos e enviar respostas. Suporta criação automática de usuários e comandos de texto para gerenciar finanças, itens e água.",
+      "files": [
+        "hz-solucoes/apps/server/src/routes/whatsapp.ts"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/whatsapp/webhook": {
+            "get": {
+              "summary": "Verificação do webhook (Meta/Facebook)",
+              "parameters": [
+                { "name": "hub.mode", "in": "query", "schema": { "type": "string" } },
+                { "name": "hub.verify_token", "in": "query", "schema": { "type": "string" } },
+                { "name": "hub.challenge", "in": "query", "schema": { "type": "string" } }
+              ],
+              "responses": {
+                "200": {
+                  "description": "Retorna challenge token"
+                },
+                "403": {
+                  "description": "Token inválido"
+                }
+              }
+            },
+            "post": {
+              "summary": "Recebe mensagens do WhatsApp",
+              "requestBody": {
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "object": { "type": "string", "enum": ["whatsapp_business_account"] },
+                            "entry": { "type": "array" }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "from": { "type": "string" },
+                            "body": { "type": "string" }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "responses": {
+                "200": {
+                  "description": "Comando processado com sucesso",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "success": { "type": "boolean" },
+                          "response": { "type": "string" },
+                          "user": { "type": "object" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Health Check",
+      "description": "Endpoint simples para verificar se o servidor está rodando.",
+      "files": [
+        "hz-solucoes/apps/server/src/index.ts"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "paths": {
+          "/health": {
+            "get": {
+              "summary": "Health check do servidor",
+              "responses": {
+                "200": {
+                  "description": "Servidor está funcionando",
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "status": { "type": "string", "example": "ok" },
+                          "timestamp": { "type": "string", "format": "date-time" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Frontend Dashboard",
+      "description": "Dashboard React completo com resumo financeiro, cuidados do dia, consumo de água, transações recentes e ações rápidas.",
+      "files": [
+        "hz-solucoes/apps/web/src/pages/Dashboard.tsx",
+        "hz-solucoes/apps/web/src/pages/Login.tsx"
+      ],
+      "api_doc": {
+        "openapi": "3.0.0",
+        "info": {
+          "title": "Frontend Dashboard",
+          "description": "Interface React com React Query para gerenciamento financeiro e cuidados pessoais"
+        }
+      }
+    }
+  ]
+}

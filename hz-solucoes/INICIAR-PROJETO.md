@@ -68,3 +68,5 @@ O frontend estará rodando em: **http://localhost:5173**
 - Em produção, configure `VITE_TRPC_URL` com a URL completa do backend
 - O backend aceita CORS de qualquer origem em desenvolvimento
 
+
+

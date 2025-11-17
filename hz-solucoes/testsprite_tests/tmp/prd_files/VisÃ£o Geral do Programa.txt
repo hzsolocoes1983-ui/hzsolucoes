@@ -1,0 +1,123 @@
+Visão Geral do Programa
+Sistema financeiro para casais, com dashboard web e integração bidirecional via WhatsApp (Twilio).
+Full-stack TypeScript: frontend React + backend Express/tRPC + MySQL (Drizzle ORM).
+Autenticação via OAuth (Manus). Notificações opcionais via Forge/Manus.
+Arquitetura de Alto Nível
+Cliente (SPA React + Vite)
+UI moderna com Tailwind, Radix UI, React Query e TRPC Client.
+Consome a API via tRPC em /api/trpc.
+Redireciona para login quando a API retorna não autenticado (com fallback para “/” se OAuth não configurado).
+Servidor (Express)
+Exposição de API tRPC (rotas tipadas end-to-end).
+Webhook do WhatsApp (Twilio) com verificação de assinatura HMAC.
+Em desenvolvimento, injeta o Vite como middleware para servir a SPA e HMR.
+Em produção, serve estáticos a partir de dist.
+Banco de Dados (MySQL + Drizzle ORM)
+Schema tipado e funções de acesso em 
+server/db.ts
+.
+Domínios: despesas, receitas diárias, despesas fixas, projetos/metas, itens, cartões de crédito (compras e parcelas), dívidas e pagamentos, limites por categoria, eventos com vencimento.
+Integração WhatsApp
+Parser de comandos em PT-BR.
+Webhook processa mensagens recebidas (Twilio) e executa ações financeiras.
+Notificações para o “owner” via canal Manus (opcional).
+Autenticação/Autorização
+OAuth Manus.
+protectedProcedure no tRPC para proteger ações.
+Cookies de sessão.
+Configuração por Ambiente
+.env com DATABASE_URL, OAuth, Twilio, Forge, etc.
+ENV.isProduction habilita modo produção, caso contrário Vite middleware.
+Estrutura de Pastas (essencial)
+client/
+index.html principal.
+src/main.tsx: bootstrap React, React Query, TRPC Client.
+src/ componentes, páginas, hooks, libs.
+server/
+_core/index.ts
+: entrypoint do servidor. Registra OAuth, webhook WhatsApp, tRPC e Vite/static.
+_core/vite.ts: setup do Vite (dev) e serveStatic (prod).
+_core/context.ts: contexto da API (user/session).
+_core/env.ts: leitura de variáveis de ambiente.
+routers.ts: declaração dos routers/procedures tRPC (despesas, receitas, itens, etc.).
+db.ts
+: todas as operações de banco (Drizzle) por domínio.
+whatsapp-webhook.ts: endpoint do Twilio, valida assinatura, chama parser e DB.
+whatsapp-parser.ts: parseia comandos: ajuda, saldo, resumo, despesas, itens, gasto <descrição>, receita <descrição>.
+whatsapp.ts: helpers de notificação (notifyExpenseAdded, etc.).
+shared/
+Constantes e tipos compartilhados (ex.: 
+shared/const
+).
+drizzle/
+schema de tabelas (importado por 
+server/db.ts
+).
+Arquivos de build/config: package.json, vite.config.ts, vercel.json, scripts .ps1._
+Fluxos Principais
+Login e Sessão
+Usuário autentica via OAuth, app grava/atualiza usuário (
+upsertUser
+) e sessão.
+protectedProcedure garante que só autenticados alterem dados.
+Dashboard/Relatórios
+Front consulta tRPC para:
+Totais do mês: receitas, despesas variáveis, despesas fixas, saldo.
+Últimas transações.
+Itens pendentes.
+Gráficos por pessoa/categoria.
+Despesas/Receitas
+Adição via UI ou WhatsApp.
+Auto-categorização por keywords configuráveis.
+Valores guardados em centavos (inteiros).
+WhatsApp
+Twilio envia POST ao webhook.
+Verificação de assinatura HMAC-SHA1.
+Mapeia From a household (via whatsappSettings).
+Executa comando parseado:
+gasto: insere despesa (categoria automática), notifica owner.
+receita: insere receita diária.
+saldo/resumo: calcula faturamento – despesas – fixas do mês.
+despesas: lista últimas 5.
+itens: lista pendências.
+ajuda: retorna guia.
+Cartões de Crédito
+Cadastros de cartão, faturas (statements), compras, parcelamento (gera parcelas).
+Marcação de parcelas pagas.
+Dívidas
+Criação de dívidas, pagamentos, listagens.
+Limites por Categoria
+Upsert de limites mensais por categoria, opcional com notificação.
+Eventos com Vencimento
+Registro, listagem por mês e atualização de status.
+Tecnologias e Dependências Chave
+Frontend
+React 18, Vite 5, TypeScript, TailwindCSS, Radix UI, React Query, TRPC Client, Wouter.
+Backend
+Node.js, Express 5, tRPC Server 11, Drizzle ORM, mysql2, superjson.
+Dev/Build
+Vite (dev e build), tsx (TS runtime), esbuild (bundle servidor prod).
+ESLint, Prettier, Vitest.
+Integrações
+Twilio (WhatsApp).
+Manus OAuth e Forge (opcional).
+Ambiente e Execução
+Desenvolvimento
+pnpm install
+pnpm dev → Express + Vite em middleware. Acesse http://localhost:3000
+Opcional: pnpm dev:vite → UI em http://localhost:5173 (sem backend).
+Produção
+pnpm build (Vite) + pnpm build:server (esbuild).
+pnpm start → NODE_ENV=production e server serve dist.
+Segurança e Boas Práticas
+Verificação de assinatura Twilio no webhook.
+Procedures tRPC validadas com Zod.
+Cookies de sessão com opções adequadas (em produção).
+Tipo seguro end-to-end com tRPC + TS.
+Considerações Operacionais
+Necessita DATABASE_URL para funcionalidades de dados.
+WhatsApp exige credenciais Twilio e vincular número do usuário no app.
+Sem OAuth configurado, front usa fallback de login para “/” (evita quebra).
+Resumo
+O projeto é uma aplicação full-stack, com UI React servida pelo próprio servidor Express em dev (via Vite middleware), APIs tRPC tipadas, MySQL com Drizzle, e integração robusta com WhatsApp para inserir/consultar finanças por comandos.
+Está pronto para desenvolvimento local e pode ser empacotado para produção com build do client e bundle do servidor.

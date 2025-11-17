@@ -4,18 +4,13 @@ import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpcFetch } from '../lib/trpc';
+import { formatCurrency, parseBrazilianNumber, requireAuth } from '../lib/utils';
 
 export default function Dashboard() {
-  const userStr = localStorage.getItem('user');
-  if (!userStr) {
-    window.location.href = '/';
-    return null;
-  }
-  
-  const user = JSON.parse(userStr);
+  // Hooks devem vir primeiro, antes de qualquer return condicional
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const queryClient = useQueryClient();
-
+  
   // Estados dos modais
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showIncomeModal, setShowIncomeModal] = useState(false);
@@ -26,6 +21,9 @@ export default function Dashboard() {
   const [incomeDesc, setIncomeDesc] = useState('');
   const [itemName, setItemName] = useState('');
   const [itemPrice, setItemPrice] = useState('');
+  
+  // Verifica usuário após hooks
+  const user = requireAuth();
 
   const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -113,11 +111,11 @@ export default function Dashboard() {
     queryFn: async () => {
       try {
         if (!user?.id) return { total: 0, intakes: [] };
-        // tRPC espera Date, mas vamos garantir que seja serializado corretamente
+        // tRPC aceita string ISO ou Date
         const today = new Date();
         return await trpcFetch<{ total: number; intakes: any[] }>('getWaterIntake', {
           userId: user.id,
-          date: today.toISOString() as any // Será convertido pelo tRPC
+          date: today.toISOString()
         });
       } catch (error: any) {
         console.error('Erro ao buscar água:', error);
@@ -136,7 +134,7 @@ export default function Dashboard() {
         const today = new Date();
         return await trpcFetch<any[]>('getDailyCare', {
           userId: user.id,
-          date: today.toISOString() as any // Será convertido pelo tRPC
+          date: today.toISOString()
         });
       } catch (error: any) {
         console.error('Erro ao buscar cuidados:', error);
@@ -146,9 +144,6 @@ export default function Dashboard() {
     retry: 1,
   });
 
-  const formatCurrency = (value: number) => 
-    value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
   // Helper para verificar se um cuidado foi marcado hoje
   const isCareMarked = (type: string) => {
     return dailyCareData.some((care: any) => care.type === type && care.completed);
@@ -157,12 +152,29 @@ export default function Dashboard() {
   // Mutations
   const addExpense = useMutation({
     mutationFn: async () => {
-      await trpcFetch('addTransaction', {
-        userId: user.id,
-        type: 'expense',
-        amount: parseFloat(expenseAmount),
-        description: expenseDesc,
-      });
+      if (!user?.id) {
+        throw new Error('Usuário não encontrado. Faça login novamente.');
+      }
+      const amount = parseBrazilianNumber(expenseAmount);
+      if (!amount || amount <= 0) {
+        throw new Error('Valor inválido');
+      }
+      
+      // Garante que userId seja um número
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+      
+      const input = {
+        userId: userId,
+        type: 'expense' as const,
+        amount: amount,
+        description: expenseDesc || undefined,
+      };
+      
+      console.log('[Dashboard] Enviando addTransaction:', input);
+      console.log('[Dashboard] User ID type:', typeof userId, 'value:', userId);
+      console.log('[Dashboard] Amount type:', typeof amount, 'value:', amount);
+      
+      await trpcFetch('addTransaction', input);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['summary'] });
@@ -179,12 +191,29 @@ export default function Dashboard() {
 
   const addIncome = useMutation({
     mutationFn: async () => {
-      await trpcFetch('addTransaction', {
-        userId: user.id,
-        type: 'income',
-        amount: parseFloat(incomeAmount),
-        description: incomeDesc,
-      });
+      if (!user?.id) {
+        throw new Error('Usuário não encontrado. Faça login novamente.');
+      }
+      const amount = parseBrazilianNumber(incomeAmount);
+      if (!amount || amount <= 0) {
+        throw new Error('Valor inválido');
+      }
+      
+      // Garante que userId seja um número
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+      
+      const input = {
+        userId: userId,
+        type: 'income' as const,
+        amount: amount,
+        description: incomeDesc || undefined,
+      };
+      
+      console.log('[Dashboard] Enviando addTransaction:', input);
+      console.log('[Dashboard] User ID type:', typeof userId, 'value:', userId);
+      console.log('[Dashboard] Amount type:', typeof amount, 'value:', amount);
+      
+      await trpcFetch('addTransaction', input);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['summary'] });
@@ -201,10 +230,13 @@ export default function Dashboard() {
 
   const addItem = useMutation({
     mutationFn: async () => {
+      if (!user?.id) {
+        throw new Error('Usuário não encontrado. Faça login novamente.');
+      }
       await trpcFetch('addItem', {
         userId: user.id,
         name: itemName,
-        price: itemPrice ? parseFloat(itemPrice) : undefined,
+        price: itemPrice ? parseBrazilianNumber(itemPrice) : undefined,
       });
     },
     onSuccess: () => {
@@ -690,10 +722,31 @@ export default function Dashboard() {
         {/* Mais */}
         <div>
           <h2 className="text-lg font-semibold mb-3 text-gray-700">Explore por abas: Finanças, Despesas e Receitas</h2>
-          <div className="flex gap-2">
-            <Button variant="default">Finanças</Button>
-            <Button variant="outline">Despesas</Button>
-            <Button variant="outline">Receitas</Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button 
+              variant="default" 
+              onClick={() => window.location.href = '/transactions'}
+            >
+              Transações
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/reports'}
+            >
+              Relatórios
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/goals'}
+            >
+              Metas
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/items'}
+            >
+              Lista de Compras
+            </Button>
           </div>
         </div>
       </div>
@@ -701,22 +754,37 @@ export default function Dashboard() {
       {/* Navegação Inferior */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2">
         <div className="flex justify-around items-center max-w-md mx-auto">
-          <button className="flex flex-col items-center gap-1 text-gray-600">
+          <button 
+            className="flex flex-col items-center gap-1 text-gray-600"
+            onClick={() => window.location.href = '/dashboard'}
+          >
             <span className="text-xl">🏠</span>
             <span className="text-xs">Início</span>
           </button>
-          <button className="flex flex-col items-center gap-1 text-gray-600">
+          <button 
+            className="flex flex-col items-center gap-1 text-gray-600"
+            onClick={() => window.location.href = '/transactions'}
+          >
             <span className="text-xl">~</span>
-            <span className="text-xs">Despesa</span>
+            <span className="text-xs">Transações</span>
           </button>
-          <button className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg">
+          <button 
+            className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg"
+            onClick={() => setShowExpenseModal(true)}
+          >
             <span className="text-2xl">+</span>
           </button>
-          <button className="flex flex-col items-center gap-1 text-gray-600">
+          <button 
+            className="flex flex-col items-center gap-1 text-gray-600"
+            onClick={() => window.location.href = '/reports'}
+          >
             <span className="text-xl">📊</span>
             <span className="text-xs">Relatórios</span>
           </button>
-          <button className="flex flex-col items-center gap-1 text-gray-600">
+          <button 
+            className="flex flex-col items-center gap-1 text-gray-600"
+            onClick={() => window.location.href = '/items'}
+          >
             <span className="text-xl">📋</span>
             <span className="text-xs">Itens</span>
           </button>

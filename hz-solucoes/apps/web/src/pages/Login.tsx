@@ -77,6 +77,7 @@ export default function LoginPage() {
       console.log('Fazendo login guest... URL:', trpcUrl);
 
       // Login sem senha: cria/retorna usuário padrão
+      // loginGuest não precisa de input, mas tRPC requer um objeto vazio
       const result = await trpcFetch<{ token: string; user: any }>('loginGuest', {});
 
       return result;

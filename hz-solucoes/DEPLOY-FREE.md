@@ -157,11 +157,20 @@ Siga os passos da Opção 1.
 ### Backend (Render.com/Fly.io)
 - `PORT`: Definido automaticamente (não precisa configurar)
 - `CORS_ORIGIN`: URL do frontend (opcional, padrão permite todas)
+ - `WHATSAPP_PHONE_ID`: ID do número WhatsApp Business (Meta)
+ - `WHATSAPP_ACCESS_TOKEN`: Token de acesso (long‑lived) da Cloud API
+ - `WHATSAPP_VERIFY_TOKEN`: Token usado na verificação do webhook
+ - `WHATSAPP_API_VERSION` (opcional): Padrão `v20.0`
 
 ### Frontend (Vercel/Netlify/Render)
 - `VITE_TRPC_URL`: **OBRIGATÓRIO** - URL do backend + `/trpc`
   - Exemplo Render: `https://seu-app.onrender.com/trpc`
   - Exemplo Fly.io: `https://seu-app.fly.dev/trpc`
+
+### Webhook do WhatsApp (Meta)
+- Verificação (GET): `https://SEU-BACKEND/whatsapp/webhook`
+- Recebimento (POST): `https://SEU-BACKEND/whatsapp/webhook`
+- No painel do Meta (WhatsApp Cloud API), informe a URL acima e o `WHATSAPP_VERIFY_TOKEN`
 
 ---
 

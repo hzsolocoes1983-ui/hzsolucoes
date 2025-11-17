@@ -37,31 +37,44 @@ export const router = t.router({
   // Login sem senha (uso familiar)
   // Cria (se necessário) e retorna um usuário padrão
   loginGuest: t.procedure
-    .mutation(async () => {
-      const defaultWhatsApp = process.env.DEFAULT_WHATSAPP || 'family@local';
-      const defaultName = process.env.DEFAULT_NAME || 'Família';
-      const defaultPassword = 'nopass';
+    .input(z.any()) // Aceita qualquer input (objeto vazio, undefined, null, etc)
+    .mutation(async ({ input }) => {
+      try {
+        const defaultWhatsApp = process.env.DEFAULT_WHATSAPP || 'family@local';
+        const defaultName = process.env.DEFAULT_NAME || 'Família';
+        const defaultPassword = 'nopass';
 
-      let user = await db.select().from(users).where(eq(users.whatsapp, defaultWhatsApp)).get();
+        console.log('[loginGuest] Iniciando login guest...', { defaultWhatsApp });
 
-      if (!user) {
-        await db.insert(users).values({
-          whatsapp: defaultWhatsApp,
-          name: defaultName,
-          password: defaultPassword,
-          createdAt: new Date(),
-        });
-        user = await db.select().from(users).where(eq(users.whatsapp, defaultWhatsApp)).get();
+        let user = await db.select().from(users).where(eq(users.whatsapp, defaultWhatsApp)).get();
+        console.log('[loginGuest] Usuário encontrado:', user ? 'sim' : 'não');
+
+        if (!user) {
+          console.log('[loginGuest] Criando novo usuário...');
+          await db.insert(users).values({
+            whatsapp: defaultWhatsApp,
+            name: defaultName,
+            password: defaultPassword,
+            createdAt: new Date(),
+          });
+          user = await db.select().from(users).where(eq(users.whatsapp, defaultWhatsApp)).get();
+          console.log('[loginGuest] Usuário criado:', user ? 'sim' : 'não');
+        }
+
+        if (!user) {
+          throw new Error('Falha ao criar usuário padrão');
+        }
+
+        const result = {
+          token: 'token-' + user.id,
+          user: { whatsapp: user.whatsapp, name: user.name, id: user.id }
+        };
+        console.log('[loginGuest] Login bem-sucedido:', result.user.name);
+        return result;
+      } catch (error: any) {
+        console.error('[loginGuest] Erro:', error);
+        throw error;
       }
-
-      if (!user) {
-        throw new Error('Falha ao criar usuário padrão');
-      }
-
-      return {
-        token: 'token-' + user.id,
-        user: { whatsapp: user.whatsapp, name: user.name, id: user.id }
-      };
     }),
 
   register: t.procedure
@@ -91,7 +104,11 @@ export const router = t.router({
       description: z.string().optional(),
       category: z.string().optional(),
       isFixed: z.boolean().optional(),
-      date: z.date().optional(),
+      date: z.union([z.date(), z.string()]).optional().transform((val) => {
+        if (!val) return new Date();
+        if (typeof val === 'string') return new Date(val);
+        return val;
+      }),
     }))
     .mutation(async ({ input }) => {
       const category = input.type === 'expense' && input.description
@@ -338,7 +355,11 @@ export const router = t.router({
   getDailyCare: t.procedure
     .input(z.object({
       userId: z.number(),
-      date: z.date().optional(),
+      date: z.union([z.date(), z.string()]).optional().transform((val) => {
+        if (!val) return new Date();
+        if (typeof val === 'string') return new Date(val);
+        return val;
+      }),
       type: z.string().optional(),
     }))
     .query(async ({ input }) => {
@@ -384,7 +405,11 @@ export const router = t.router({
   getWaterIntake: t.procedure
     .input(z.object({
       userId: z.number(),
-      date: z.date().optional(),
+      date: z.union([z.date(), z.string()]).optional().transform((val) => {
+        if (!val) return new Date();
+        if (typeof val === 'string') return new Date(val);
+        return val;
+      }),
     }))
     .query(async ({ input }) => {
       const targetDate = input.date || new Date();

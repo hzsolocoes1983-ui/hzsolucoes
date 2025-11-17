@@ -1,0 +1,469 @@
+[
+  {
+    "id": "TC001",
+    "title": "Guest Login Success",
+    "description": "Validate that a user can login as guest successfully and receives a valid token and default user data.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /trpc/loginGuest endpoint without authentication data."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status is 200."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response contains a valid token and user object representing a guest user."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "WhatsApp Login with Correct Credentials",
+    "description": "Validate login with WhatsApp number and password returns a user token and data.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /trpc/login with valid WhatsApp number and password."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status is 200."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response includes a non-empty token and the user object with correct data."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "WhatsApp Login with Invalid Credentials",
+    "description": "Validate login fails with incorrect WhatsApp number or password.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /trpc/login with invalid WhatsApp number or wrong password."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status indicates failure, such as 401 Unauthorized."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error message indicates invalid credentials."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Create User via WhatsApp Registration",
+    "description": "Verify new user creation via WhatsApp registration API.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /trpc/register with valid WhatsApp number, name, and password."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status indicates success."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify new user data is stored and returned."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Add Income Transaction Successfully",
+    "description": "Add a new income transaction with all required and optional fields, verifying correct data storage.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /trpc/addTransaction with type=income, valid userId, positive amount, description, category, date, and isFixed=false."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status is 200 and transaction is correctly stored."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the transaction is retrievable via filters including type=income and userId."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Add Expense Transaction with Fixed Flag",
+    "description": "Add a new fixed expense transaction and verify categorization and storage.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /trpc/addTransaction with type=expense, userId, amount, description, category, date, and isFixed=true."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response is success."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify transaction is listed in fixed expenses when queried."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Add Transaction with Missing Required Fields",
+    "description": "Validate API rejects transactions missing mandatory fields like userId, amount, or type.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /trpc/addTransaction omitting userId or amount or type."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status indicates bad request with validation error."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Get Transactions with Filters",
+    "description": "Fetch transactions filtered by userId, year, month, and type, verify correct filtering and sorting.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /trpc/getTransactions with valid userId and various combinations of year, month, and type."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify only transactions matching all filters are returned."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Get Monthly Income and Expense Totals",
+    "description": "Verify monthly income and expense totals are accurately aggregated per user and month.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET requests to /trpc/getMonthlyTotal and /trpc/getMonthlyExpensesTotal with year, month, and userId."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify returned total amounts equal sum of respective income or expenses for that period and user."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Retrieve Fixed Expenses List",
+    "description": "Validate retrieval of all fixed expenses for a user.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /trpc/getFixedExpenses with valid userId."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response contains only transactions marked as fixed expenses."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Get Expenses Grouped by Category",
+    "description": "Validate aggregation and grouping of expenses per category for a given month and year.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /trpc/getExpensesByCategory with year, month, and optional userId."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response contains aggregated expense amounts grouped by category."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Get Expenses Grouped by User",
+    "description": "Validate aggregation and grouping of expenses by user for a given month and year.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /trpc/getExpensesByUser with year and month."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response contains aggregated expense totals per user."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "Create and Retrieve Financial Goals",
+    "description": "Validate the creation of new financial goals and retrieval for a user.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /trpc/addGoal with userId, goal name, and target amount."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify goal creation success."
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to /trpc/getGoals with userId."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify created goal is included in the returned goals list."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Manage Shopping List Items",
+    "description": "Test adding items to shopping list, retrieving filtered lists, and updating item statuses.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /trpc/addItem with userId, item name, and optional price."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify item is added successfully."
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to /trpc/getItems with userId and status filter 'pending'."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify returned items include the newly added item with pending status."
+      },
+      {
+        "type": "action",
+        "description": "Send POST request to /trpc/updateItemStatus with valid item id and status 'bought'."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify item's status is updated to bought."
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to /trpc/getItems with status 'bought'."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify item appears in bought items list."
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Daily Care Task Marking and Retrieval",
+    "description": "Test marking daily care tasks as completed and verify retrieval for specific dates and types.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /trpc/markDailyCare with userId, type (e.g., medication), and scheduledTime."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify success response and task marked as completed."
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to /trpc/getDailyCare with userId, date, and type."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify returned list includes the marked daily care task."
+      }
+    ]
+  },
+  {
+    "id": "TC016",
+    "title": "Record and Retrieve Water Intake",
+    "description": "Validate registering water intake amounts and retrieving daily totals and entries.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /trpc/addWaterIntake with userId and amount in ml."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify successful recording of water intake."
+      },
+      {
+        "type": "action",
+        "description": "Send GET request to /trpc/getWaterIntake with userId and date."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify total and individual water intake records match submitted data."
+      }
+    ]
+  },
+  {
+    "id": "TC017",
+    "title": "WhatsApp Webhook Verification Success",
+    "description": "Test webhook verification with correct verification token returns challenge successfully.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /whatsapp/webhook with correct hub.verify_token and valid hub.mode and hub.challenge."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status is 200 and body matches hub.challenge parameter."
+      }
+    ]
+  },
+  {
+    "id": "TC018",
+    "title": "WhatsApp Webhook Verification Failure",
+    "description": "Test webhook verification fails with invalid verification token.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /whatsapp/webhook with incorrect hub.verify_token."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status is 403 Forbidden."
+      }
+    ]
+  },
+  {
+    "id": "TC019",
+    "title": "Process Valid WhatsApp Commands via Webhook",
+    "description": "Verify processing of valid WhatsApp text commands updates system data and sends proper responses.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /whatsapp/webhook with valid WhatsApp message JSON containing a financial command (e.g., 'gasto 50 supermercado')."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify system parses command, identifies/creates user, updates transactions, and sends confirmation response."
+      }
+    ]
+  },
+  {
+    "id": "TC020",
+    "title": "Reject Webhook Requests with Invalid HMAC Signature",
+    "description": "Verify webhook rejects incoming requests lacking correct HMAC-SHA1 signature to ensure security.",
+    "category": "security",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send POST request to /whatsapp/webhook with malformed or absent HMAC signature header."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the request is rejected with an unauthorized or error status."
+      }
+    ]
+  },
+  {
+    "id": "TC021",
+    "title": "Dashboard Loads with Real-time Data",
+    "description": "Test dashboard page loads correctly with real-time financial summaries, transactions, daily care and water data via API.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login user, then load dashboard page."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify dashboard displays monthly summaries, category breakdowns, recent transactions, daily care checklists, and water intake progress."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify data is retrieved and updated correctly via tRPC and React Query with no errors."
+      }
+    ]
+  },
+  {
+    "id": "TC022",
+    "title": "Dashboard Handles Expired Session Gracefully",
+    "description": "Verify dashboard behavior when API sessions expire, prompting re-authentication without crashes.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Simulate session expiration by using invalid or expired token and load dashboard."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify dashboard shows appropriate message or redirect for re-login."
+      }
+    ]
+  },
+  {
+    "id": "TC023",
+    "title": "Server Health Check Endpoint",
+    "description": "Validate that the health endpoint responds with current server status and timestamp.",
+    "category": "functional",
+    "priority": "Low",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send GET request to /health endpoint."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify response status is 200 with JSON body containing status=\"ok\" and valid ISO timestamp."
+      }
+    ]
+  }
+]

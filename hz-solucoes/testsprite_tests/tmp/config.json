@@ -1,0 +1,15 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:5173",
+  "executionArgs": {
+    "projectName": "hz-solucoes",
+    "projectPath": "C:\\Users\\hz\\Desktop\\hz-solucoes-realtime-whatsapp\\hz-solucoes",
+    "testIds": [],
+    "additionalInstruction": "",
+    "envs": {
+      "API_KEY": "sk-user-xlUAHhd10402ZTQ2M8n8rrH_7xh_n4H0forJOq3O2teBkme0Nh2ZYuCYxdfpqBySjwNX-eAXPmsHvKKhgFncbsGlGqCiTLD5RJJWTrS-VJwDan7rKhQIUcmGUFGWB57ul_8"
+    }
+  }
+}

@@ -122,6 +122,12 @@ Depois do primeiro deploy, qualquer push no GitHub atualiza automaticamente! �
 - [ ] Frontend deployado com variável `VITE_TRPC_URL` configurada
 - [ ] Testado no navegador
 - [ ] (Opcional) UptimeRobot configurado
+ - [ ] (Opcional) WhatsApp Cloud API configurada (Meta): `WHATSAPP_PHONE_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_VERIFY_TOKEN`
+
+### WhatsApp Cloud API (Meta)
+- Configure no Render as variáveis: `WHATSAPP_PHONE_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_VERIFY_TOKEN`
+- Webhook (GET/POST): `https://SEU-BACKEND/whatsapp/webhook`
+- Use o mesmo token de verificação configurado em `WHATSAPP_VERIFY_TOKEN`
 
 ---
 

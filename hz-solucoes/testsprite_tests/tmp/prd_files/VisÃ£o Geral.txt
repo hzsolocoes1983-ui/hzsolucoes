@@ -1,0 +1,89 @@
+Visão Geral
+
+Monorepo com backend (Express + tRPC + Drizzle/LibSQL), frontend (React + Vite) e integração WhatsApp.
+Fluxo principal: login sem senha, dashboard com dados reais, comandos via WhatsApp para registrar e consultar informações.
+Autenticação & Usuários
+
+Login sem senha: botão “Acessar” no frontend chama loginGuest e cria/recupera usuário padrão.
+Login com WhatsApp/senha: endpoint login (mantido para uso futuro).
+Criação automática de usuário via WhatsApp: ao receber mensagem, se o número não existir, cria o usuário.
+Financeiro
+
+Registra transações: income (receita) e expense (despesa), com category, isFixed, date, amount, description.
+Relatórios:
+getMonthlyTotal: total de receitas do mês.
+getMonthlyExpensesTotal: total de despesas do mês.
+getFixedExpenses: despesas fixas.
+getExpensesByCategory: despesas agrupadas por categoria.
+getExpensesByUser: despesas por usuário.
+Listagem de transações com filtros por userId, year, month, type.
+Lista de Itens
+
+addItem: adiciona item com name, price opcional e status inicial pending.
+getItems: lista itens por userId e status.
+updateItemStatus: atualiza status (pending/bought).
+Cuidados do Dia
+
+getDailyCare: lista atividades de cuidado do dia (ex.: caminhar, alongar).
+markDailyCare: marca atividade como concluída.
+Consumo de Água
+
+addWaterIntake: registra consumo (ml), somando ao dia.
+getWaterIntake: total diário para acompanhar meta (padrão 2000ml).
+Integração WhatsApp
+
+Webhook GET /whatsapp/webhook: verificação do Meta (retorna hub.challenge se WHATSAPP_VERIFY_TOKEN confere).
+Webhook POST /whatsapp/webhook:
+Suporta payload do WhatsApp Cloud API (Meta) e um formato simples {from, body} para testes.
+Cria/recupera usuário pelo wa_id, interpreta comandos, atualiza banco e responde pelo WhatsApp via Graph API.
+Auto-categorização básica de despesas por palavras-chave (mercado, gasolina, contas, etc.).
+Comandos via WhatsApp
+
+gasto [valor] [descrição] — adiciona despesa. Ex: gasto 50 mercado.
+receita [valor] [descrição] — adiciona receita. Ex: receita 5000 salário.
+saldo — resumo mensal (receitas, despesas, saldo).
+despesas — últimas 5 despesas.
+itens — lista itens pendentes.
+item [nome] [preço] — adiciona item. Ex: item leite 5.50.
+agua [ml] — adiciona água (padrão 200ml). Ex: agua 300.
+ajuda — lista todos os comandos.
+Frontend (Dashboard)
+
+Acesso com um clique (sem senha) e armazenamento de token/userId em localStorage.
+Seções:
+Resumo financeiro do mês.
+Atividades recentes.
+Cuidados do dia (marcar concluído).
+Consumo de água do dia.
+Ações rápidas (atalhos).
+Navegação inferior com páginas principais.
+Banco de Dados
+
+Tabelas: users, goals, transactions, items, daily_care, water_intake.
+Inicialização automática: cria tabelas se não existirem ao subir o servidor.
+Configuração
+
+Backend:
+CORS_ORIGIN: URL do frontend (ex.: https://seu-app.vercel.app), permite * por padrão.
+DATABASE_URL: LibSQL/Turso (opcional; sem isso usa arquivo local).
+WhatsApp Cloud API: WHATSAPP_PHONE_ID, WHATSAPP_ACCESS_TOKEN, WHATSAPP_VERIFY_TOKEN, WHATSAPP_API_VERSION (padrão v20.0).
+Frontend:
+VITE_TRPC_URL: URL do backend + /trpc (ex.: https://seu-backend.onrender.com/trpc).
+Testes Rápidos
+
+Verificação Webhook (Meta):
+Configure Webhook URL: https://SEU-BACKEND/whatsapp/webhook e o Verify Token.
+O Meta envia GET e deve receber o hub.challenge.
+Mensagens WhatsApp (produção):
+Envie ajuda do seu número para o WhatsApp Business; deve responder com a lista de comandos.
+Envie gasto 50 mercado e depois saldo; verifique a confirmação e resumo.
+Teste simples (sem Meta, via Postman/curl):
+POST https://SEU-BACKEND/whatsapp/webhook com body:
+{"from": "5511999999999@whatsapp.net", "body": "gasto 50 mercado"}
+Frontend:
+Abra o app, clique Acessar, e confira no Dashboard os dados (resumo, água, cuidados do dia).
+Limitações e Observações
+
+Envio automático de mensagens foi implementado para a Cloud API (Meta). Para outros provedores (Evolution API, Twilio), o parser funciona e posso adaptar o envio conforme a API.
+Algumas páginas detalhadas (ex.: telas específicas de despesas/receitas/relatórios avançados) podem precisar de finalização de UI se desejar além do dashboard.
+Se você me enviar o “programa de testes” que pretende usar (ou o provedor de WhatsApp que vai integrar), eu ajusto o webhook e o envio de mensagens para bater exatamente com o formato que ele espera

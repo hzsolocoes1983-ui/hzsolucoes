@@ -5,6 +5,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // Pages
 import LoginPage from './pages/Login';
 import DashboardPage from './pages/Dashboard';
+import TransactionsPage from './pages/Transactions';
+import GoalsPage from './pages/Goals';
+import ItemsPage from './pages/Items';
+import ReportsPage from './pages/Reports';
 
 // Layout
 // Layout removido temporariamente até existir o componente
@@ -48,7 +52,29 @@ export default function App() {
             </ProtectedRoute>
           } />
           
-          {/* Rotas adicionais serão reativadas quando as páginas existirem */}
+          <Route path="/transactions" element={
+            <ProtectedRoute>
+              <TransactionsPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/goals" element={
+            <ProtectedRoute>
+              <GoalsPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/items" element={
+            <ProtectedRoute>
+              <ItemsPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/reports" element={
+            <ProtectedRoute>
+              <ReportsPage />
+            </ProtectedRoute>
+          } />
           
           {/* Catch all - redirect to dashboard if authenticated, login if not */}
           <Route path="*" element={<Navigate to="/" replace />} />

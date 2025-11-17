@@ -90,42 +90,119 @@ export async function trpcFetch<T>(
   procedure: string,
   input: any
 ): Promise<T> {
-  const url = `${TRPC_URL}/${procedure}`;
+  // O tRPC Express adapter espera a URL no formato /trpc/[procedure]
+  // Se TRPC_URL já termina com /trpc, usa direto, senão adiciona
+  let baseUrl = TRPC_URL;
+  if (!baseUrl.endsWith('/trpc')) {
+    baseUrl = baseUrl.endsWith('/') ? `${baseUrl}trpc` : `${baseUrl}/trpc`;
+  }
+  const url = `${baseUrl}/${procedure}`;
   
-  console.log(`[tRPC] ${procedure}`, { url, input });
+  console.log(`[tRPC] ${procedure}`, { 
+    TRPC_URL, 
+    baseUrl, 
+    url, 
+    input,
+    inputType: typeof input,
+    inputKeys: input ? Object.keys(input) : []
+  });
   
   try {
-    // Formato do tRPC v10 com Express adapter
-    // O body deve ser um array com objetos no formato batch
+    // O tRPC Express adapter espera o body como um array batch
+    // Formato: [{ id: number, json: input }]
+    const requestBody = [
+      {
+        id: 1,
+        json: input
+      }
+    ];
+    
+    console.log(`[tRPC] Request body:`, JSON.stringify(requestBody, null, 2));
+    console.log(`[tRPC] Input serializado:`, JSON.stringify(input));
+    console.log(`[tRPC] Input keys:`, input ? Object.keys(input) : 'null');
+    console.log(`[tRPC] Input values:`, input ? Object.values(input) : 'null');
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        "0": {
-          "json": input
-        }
-      }),
+      body: JSON.stringify(requestBody),
     });
 
+    const responseText = await response.text();
+    console.log(`[tRPC] Response status: ${response.status}`);
+    console.log(`[tRPC] Response text:`, responseText);
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[tRPC] Erro HTTP ${response.status}:`, errorText);
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+      console.error(`[tRPC] Erro HTTP ${response.status}:`, responseText);
+      
+      // Tenta parsear o erro como JSON para extrair mensagem mais amigável
+      try {
+        const errorJson = JSON.parse(responseText);
+        if (errorJson.error?.message) {
+          // Se a mensagem for um array de erros do Zod, tenta formatar melhor
+          let errorMessage = errorJson.error.message;
+          if (typeof errorMessage === 'string' && errorMessage.includes('invalid_type')) {
+            try {
+              const zodErrors = JSON.parse(errorMessage);
+              if (Array.isArray(zodErrors)) {
+                const formattedErrors = zodErrors.map((err: any) => 
+                  `${err.path?.join('.') || 'campo'}: ${err.message || 'erro de validação'}`
+                ).join(', ');
+                errorMessage = `Erro de validação: ${formattedErrors}`;
+              }
+            } catch {
+              // Se não conseguir parsear, usa a mensagem original
+            }
+          }
+          throw new Error(errorMessage);
+        }
+        // Se for um array de erros do tRPC
+        if (Array.isArray(errorJson) && errorJson[0]?.result?.error) {
+          const error = errorJson[0].result.error;
+          throw new Error(error.message || JSON.stringify(error));
+        }
+      } catch (parseError) {
+        // Se não conseguir parsear, usa o texto direto
+      }
+      
+      throw new Error(`HTTP ${response.status}: ${responseText}`);
     }
 
-    const data = await response.json();
+    const data = JSON.parse(responseText);
     console.log(`[tRPC] Resposta ${procedure}:`, data);
     
-    // tRPC retorna: [{ result: { data: { json: T } } }]
-    if (Array.isArray(data) && data[0]?.result) {
+    // tRPC pode retornar diretamente { result: { data: { json: T } } } ou { data: T }
+    if (data.result?.data?.json !== undefined) {
+      return data.result.data.json as T;
+    }
+    if (data.result?.data !== undefined) {
+      return data.result.data as T;
+    }
+    if (data.data !== undefined) {
+      return data.data as T;
+    }
+    
+    // tRPC retorna: [{ result: { data: { json: T } } }] para batch
+    if (Array.isArray(data) && data.length > 0 && data[0]?.result) {
       const result = data[0].result;
       
       // Se houver erro
       if (result.error) {
         console.error(`[tRPC] Erro na resposta:`, result.error);
-        throw new Error(result.error.message || 'Erro desconhecido');
+        // Extrai mensagem de erro de forma mais amigável
+        let errorMessage = 'Erro desconhecido';
+        
+        if (typeof result.error.message === 'string') {
+          errorMessage = result.error.message;
+        } else if (result.error.data?.code) {
+          errorMessage = `Erro ${result.error.data.code}: ${result.error.message || 'Erro na validação'}`;
+        } else {
+          errorMessage = JSON.stringify(result.error);
+        }
+        
+        throw new Error(errorMessage);
       }
       
       // Retorna os dados

@@ -29,9 +29,21 @@ Configure as seguintes variáveis de ambiente no Railway:
 - `CORS_ORIGIN`: URL do frontend no Vercel (ex: `https://seu-app.vercel.app`) - opcional, padrão permite todas as origens
 - Adicione outras variáveis conforme necessário (ex: banco de dados, API keys)
 
+#### WhatsApp Cloud API (Meta)
+- `WHATSAPP_PHONE_ID`: ID do número WhatsApp Business (ex: `123456789012345`)
+- `WHATSAPP_ACCESS_TOKEN`: Token de acesso (long‑lived) da API do WhatsApp
+- `WHATSAPP_VERIFY_TOKEN`: Token de verificação para o webhook
+- `WHATSAPP_API_VERSION` (opcional): Versão da API, padrão `v20.0`
+
+Webhook a configurar no Meta:
+- Verificação (GET): `https://SEU-BACKEND/whatsapp/webhook`
+- Recebimento (POST): `https://SEU-BACKEND/whatsapp/webhook`
+
 ### Após o Deploy
 
 Anote a URL do seu backend no Railway (ex: `https://seu-app.railway.app`)
+
+No Meta (WhatsApp Cloud API), configure o webhook com a URL acima e o `WHATSAPP_VERIFY_TOKEN`.
 
 ---
 

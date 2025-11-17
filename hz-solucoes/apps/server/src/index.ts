@@ -15,8 +15,19 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-app.use('/trpc', createExpressMiddleware({ router }));
+// Middleware de tratamento de erros para tRPC
+app.use('/trpc', createExpressMiddleware({ 
+  router,
+  onError: ({ error, path, type }) => {
+    console.error(`[tRPC Error] ${type} ${path}:`, error);
+  }
+}));
 app.use('/whatsapp', whatsappRouter);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 const port = process.env.PORT || 3000;
 
