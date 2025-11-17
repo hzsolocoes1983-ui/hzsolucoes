@@ -29,7 +29,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-const port = process.env.PORT || 3000;
+const port = Number(process.env.PORT) || 3000;
 const host = process.env.HOST || '0.0.0.0'; // Importante para produção
 
 // Inicializa banco de dados
