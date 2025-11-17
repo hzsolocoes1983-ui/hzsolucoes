@@ -10,6 +10,10 @@ type AppRouter = {
     input: { whatsapp: string; password: string };
     output: { token: string; user: any };
   };
+  loginGuest: {
+    input: any; // Aceita qualquer input (objeto vazio, undefined, null, etc)
+    output: { token: string; user: any };
+  };
   register: {
     input: { whatsapp: string; name: string; password: string };
     output: void;

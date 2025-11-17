@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpcFetch } from '../lib/trpc';
-import { formatCurrency, parseBrazilianNumber, formatCurrencyInput, getAuthenticatedUser } from '../lib/utils';
+import { formatCurrency, parseBrazilianNumber, formatCurrencyInput, getAuthenticatedUser, exportToCSV, formatTransactionsForExport } from '../lib/utils';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -345,8 +345,28 @@ export default function Dashboard() {
           <Button variant="outline" size="sm" onClick={() => changeMonth('next')}>
             Próximo
           </Button>
-          <Button variant="outline" size="sm">
-            Exportar
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={async () => {
+              try {
+                const transactions = await trpcFetch<any[]>('getTransactions', {
+                  userId: user.id,
+                  year,
+                  month,
+                });
+                if (transactions.length === 0) {
+                  alert('Nenhuma transação para exportar neste período');
+                  return;
+                }
+                const formatted = formatTransactionsForExport(transactions);
+                exportToCSV(formatted, `transacoes_${month}_${year}`);
+              } catch (error: any) {
+                alert('Erro ao exportar: ' + error.message);
+              }
+            }}
+          >
+            Exportar CSV
           </Button>
         </div>
       </div>

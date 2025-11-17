@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpcFetch } from '../lib/trpc';
-import { formatCurrency, parseBrazilianNumber, formatCurrencyInput, requireAuth } from '../lib/utils';
+import { formatCurrency, parseBrazilianNumber, formatCurrencyInput, requireAuth, exportToCSV, formatTransactionsForExport } from '../lib/utils';
 
 export default function TransactionsPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -135,6 +135,21 @@ export default function TransactionsPage() {
           </Button>
           <Button variant="outline" size="sm" onClick={() => changeMonth('next')}>
             →
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              if (transactions.length === 0) {
+                alert('Nenhuma transação para exportar');
+                return;
+              }
+              const formatted = formatTransactionsForExport(transactions);
+              exportToCSV(formatted, `transacoes_${month}_${year}`);
+            }}
+            disabled={transactions.length === 0}
+          >
+            Exportar CSV
           </Button>
           <Button size="sm" onClick={() => setShowAddModal(true)} className="ml-auto">
             + Adicionar

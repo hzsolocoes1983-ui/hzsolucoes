@@ -30,12 +30,15 @@ app.get('/health', (req, res) => {
 });
 
 const port = process.env.PORT || 3000;
+const host = process.env.HOST || '0.0.0.0'; // Importante para produção
 
 // Inicializa banco de dados
 initDatabase().then(() => {
-  app.listen(port, () => {
-    console.log(`Server listening on http://localhost:${port}`);
-    console.log(`WhatsApp webhook: http://localhost:${port}/whatsapp/webhook`);
+  app.listen(port, host, () => {
+    console.log(`Server listening on http://${host}:${port}`);
+    console.log(`Health check: http://${host}:${port}/health`);
+    console.log(`WhatsApp webhook: http://${host}:${port}/whatsapp/webhook`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }).catch((error) => {
   console.error('Failed to initialize database:', error);
