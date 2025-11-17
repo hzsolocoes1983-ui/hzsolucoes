@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpcFetch } from '../lib/trpc';
-import { formatCurrency, parseBrazilianNumber, requireAuth } from '../lib/utils';
+import { formatCurrency, parseBrazilianNumber, getAuthenticatedUser } from '../lib/utils';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   // Hooks devem vir primeiro, antes de qualquer return condicional
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const queryClient = useQueryClient();
@@ -22,8 +24,22 @@ export default function Dashboard() {
   const [itemName, setItemName] = useState('');
   const [itemPrice, setItemPrice] = useState('');
   
-  // Verifica usuário após hooks
-  const user = requireAuth();
+  // Verifica autenticação
+  const user = getAuthenticatedUser();
+  
+  useEffect(() => {
+    if (!user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
+  
+  if (!user) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <p>Redirecionando para login...</p>
+      </div>
+    );
+  }
 
   const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];

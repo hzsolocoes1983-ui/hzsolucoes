@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Pages
 import LoginPage from './pages/Login';
@@ -13,7 +14,14 @@ import ReportsPage from './pages/Reports';
 // Layout
 // Layout removido temporariamente até existir o componente
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -35,51 +43,53 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          } />
-          
-          {/* Protected Routes */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/transactions" element={
-            <ProtectedRoute>
-              <TransactionsPage />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/goals" element={
-            <ProtectedRoute>
-              <GoalsPage />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/items" element={
-            <ProtectedRoute>
-              <ItemsPage />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/reports" element={
-            <ProtectedRoute>
-              <ReportsPage />
-            </ProtectedRoute>
-          } />
-          
-          {/* Catch all - redirect to dashboard if authenticated, login if not */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            } />
+            
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/transactions" element={
+              <ProtectedRoute>
+                <TransactionsPage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/goals" element={
+              <ProtectedRoute>
+                <GoalsPage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/items" element={
+              <ProtectedRoute>
+                <ItemsPage />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/reports" element={
+              <ProtectedRoute>
+                <ReportsPage />
+              </ProtectedRoute>
+            } />
+            
+            {/* Catch all - redirect to dashboard if authenticated, login if not */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
