@@ -110,12 +110,10 @@ export async function trpcFetch<T>(
   try {
     // O tRPC Express adapter espera o body como um array batch
     // Formato: [{ id: number, json: input }]
-    const requestBody = [
-      {
-        id: 1,
-        json: input
-      }
-    ];
+    const requestBody = {
+      id: 1,
+      json: input
+    };
     
     console.log(`[tRPC] Request body:`, JSON.stringify(requestBody, null, 2));
     console.log(`[tRPC] Input serializado:`, JSON.stringify(input));

@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpcFetch } from '../lib/trpc';
-import { formatCurrency, parseBrazilianNumber, requireAuth } from '../lib/utils';
+import { formatCurrency, parseBrazilianNumber, formatCurrencyInput, requireAuth } from '../lib/utils';
 
 export default function TransactionsPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -238,6 +239,7 @@ export default function TransactionsPage() {
               type="text"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              onBlur={() => setAmount(formatCurrencyInput(amount))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="0,00"
             />

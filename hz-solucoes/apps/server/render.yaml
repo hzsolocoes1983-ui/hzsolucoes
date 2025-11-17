@@ -10,5 +10,5 @@ services:
         value: 20
       - key: PORT
         sync: false
-    healthCheckPath: /trpc
+    healthCheckPath: /health
 

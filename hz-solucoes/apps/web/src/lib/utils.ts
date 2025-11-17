@@ -17,6 +17,14 @@ export function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+export function formatCurrencyInput(value: string): string {
+  if (value === undefined || value === null) return '';
+  const num = parseBrazilianNumber(value);
+  return Number.isFinite(num)
+    ? num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '';
+}
+
 /**
  * Valida se o usuário está autenticado
  */

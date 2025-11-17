@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpcFetch } from '../lib/trpc';
-import { formatCurrency, parseBrazilianNumber, getAuthenticatedUser } from '../lib/utils';
+import { formatCurrency, parseBrazilianNumber, formatCurrencyInput, getAuthenticatedUser } from '../lib/utils';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -17,12 +17,18 @@ export default function Dashboard() {
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showCareConfigModal, setShowCareConfigModal] = useState(false);
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseDesc, setExpenseDesc] = useState('');
   const [incomeAmount, setIncomeAmount] = useState('');
   const [incomeDesc, setIncomeDesc] = useState('');
   const [itemName, setItemName] = useState('');
   const [itemPrice, setItemPrice] = useState('');
+  const [hormonesTime, setHormonesTime] = useState(localStorage.getItem('care_hormones_time') || '07:00');
+  const [medicineTime, setMedicineTime] = useState(localStorage.getItem('care_medicine_time') || '08:00');
+  const [foodTime, setFoodTime] = useState(localStorage.getItem('care_food_time') || '08:30');
+  const [exerciseTime, setExerciseTime] = useState(localStorage.getItem('care_exercise_time') || '11:10');
   
   // Verifica autenticação
   const user = getAuthenticatedUser();
@@ -285,10 +291,11 @@ export default function Dashboard() {
 
   const markCare = useMutation({
     mutationFn: async (type: string) => {
+      const time = (type === 'hormones' && hormonesTime) || (type === 'medicine' && medicineTime) || (type === 'food' && foodTime) || (type === 'exercise' && exerciseTime) || '07:00';
       await trpcFetch('markDailyCare', {
         userId: user.id,
         type,
-        scheduledTime: '07:00',
+        scheduledTime: time,
       });
     },
     onSuccess: () => {
@@ -383,8 +390,8 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex gap-2 mb-3">
-            <Button variant="outline" size="sm">Ver calendário</Button>
-            <Button variant="outline" size="sm">Configurar rotina</Button>
+            <Button variant="outline" size="sm" onClick={() => setShowCalendarModal(true)}>Ver calendário</Button>
+            <Button variant="outline" size="sm" onClick={() => setShowCareConfigModal(true)}>Configurar rotina</Button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Card className={`${isCareMarked('hormones') || isCareMarked('medicine') ? 'bg-green-50 border-green-300' : 'bg-blue-50 border-blue-200'}`}>
@@ -661,110 +668,46 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Atividades Recentes */}
         <div>
-          <h2 className="text-lg font-semibold mb-3 text-gray-700">Atividades Recentes</h2>
+          <h2 className="text-lg font-semibold mb-3 text-gray-700">Contas Bancárias</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Últimas Despesas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingExpenses ? (
-                  <div className="text-sm text-gray-500">Carregando...</div>
-                ) : recentExpenses.length === 0 ? (
-                  <div className="text-sm text-gray-500">Nenhuma despesa registrada</div>
-                ) : (
-                  <div className="space-y-2">
-                    {recentExpenses.map((expense: any) => (
-                      <div key={expense.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-800">
-                            {expense.description || 'Sem descrição'}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {new Date(expense.date).toLocaleDateString('pt-BR')}
-                            {expense.category && ` • ${expense.category}`}
-                          </div>
-                        </div>
-                        <div className="text-sm font-semibold text-red-600">
-                          {formatCurrency(expense.amount)}
-                        </div>
-                      </div>
-                    ))}
+            {[
+              { key: 'itau', name: 'Itaú', bg: '#ff6b00', fg: '#ffffff', border: '#cc5600' },
+              { key: 'santander', name: 'Santander', bg: '#ec0000', fg: '#ffffff', border: '#b00000' },
+              { key: 'bb', name: 'Banco do Brasil', bg: '#ffdd00', fg: '#002776', border: '#e6c800' },
+              { key: 'bradesco', name: 'Bradesco', bg: '#c41e3a', fg: '#ffffff', border: '#9f1830' },
+              { key: 'caixa', name: 'Caixa', bg: '#0c5fa8', fg: '#ffffff', border: '#084a86' },
+              { key: 'nubank', name: 'Nubank', bg: '#820ad1', fg: '#ffffff', border: '#6a08ac' },
+            ].map((b) => (
+              <Card key={b.key} style={{ borderColor: b.border }}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div style={{ backgroundColor: b.bg, color: b.fg }} className="w-10 h-10 rounded flex items-center justify-center font-bold">
+                      <span className="text-sm">{b.name.slice(0,2).toUpperCase()}</span>
+                    </div>
+                    <div className="font-semibold text-gray-800">{b.name}</div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Itens Pendentes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingItems ? (
-                  <div className="text-sm text-gray-500">Carregando...</div>
-                ) : pendingItems.length === 0 ? (
-                  <div className="text-sm text-gray-500">Nenhum item pendente</div>
-                ) : (
-                  <div className="space-y-2">
-                    {pendingItems.slice(0, 5).map((item: any) => (
-                      <div key={item.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-800">{item.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {new Date(item.createdAt).toLocaleDateString('pt-BR')}
-                          </div>
-                        </div>
-                        {item.price && (
-                          <div className="text-sm font-semibold text-gray-600">
-                            {formatCurrency(item.price)}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {pendingItems.length > 5 && (
-                      <div className="text-xs text-gray-500 text-center pt-2">
-                        +{pendingItems.length - 5} mais
-                      </div>
-                    )}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-gray-50 border border-gray-200 rounded p-2">
+                      <div className="text-xs text-gray-600">Saldo</div>
+                      <div className="text-sm font-bold" style={{ color: b.bg }}>R$ 0,00</div>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded p-2">
+                      <div className="text-xs text-gray-600">Cartão • Limite</div>
+                      <div className="text-sm font-bold" style={{ color: b.bg }}>R$ 0,00</div>
+                    </div>
+                    <div className="bg-gray-50 border border-gray-200 rounded p-2">
+                      <div className="text-xs text-gray-600">Cartão • Fatura</div>
+                      <div className="text-sm font-bold" style={{ color: b.bg }}>R$ 0,00</div>
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
 
-        {/* Mais */}
-        <div>
-          <h2 className="text-lg font-semibold mb-3 text-gray-700">Explore por abas: Finanças, Despesas e Receitas</h2>
-          <div className="flex gap-2 flex-wrap">
-            <Button 
-              variant="default" 
-              onClick={() => window.location.href = '/transactions'}
-            >
-              Transações
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => window.location.href = '/reports'}
-            >
-              Relatórios
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => window.location.href = '/goals'}
-            >
-              Metas
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => window.location.href = '/items'}
-            >
-              Lista de Compras
-            </Button>
-          </div>
-        </div>
+        
       </div>
 
       {/* Navegação Inferior */}
@@ -813,12 +756,12 @@ export default function Dashboard() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
             <input
-              type="number"
-              step="0.01"
+              type="text"
               value={expenseAmount}
               onChange={(e) => setExpenseAmount(e.target.value)}
+              onBlur={() => setExpenseAmount(formatCurrencyInput(expenseAmount))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="0.00"
+              placeholder="0,00"
             />
           </div>
           <div>
@@ -845,12 +788,12 @@ export default function Dashboard() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
             <input
-              type="number"
-              step="0.01"
+              type="text"
               value={incomeAmount}
               onChange={(e) => setIncomeAmount(e.target.value)}
+              onBlur={() => setIncomeAmount(formatCurrencyInput(incomeAmount))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="0.00"
+              placeholder="0,00"
             />
           </div>
           <div>
@@ -900,6 +843,63 @@ export default function Dashboard() {
               {addItem.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
             <Button variant="outline" onClick={() => setShowItemModal(false)}>Cancelar</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showCalendarModal} onClose={() => setShowCalendarModal(false)} title="Calendário do Dia">
+        <div className="space-y-3">
+          {loadingCare ? (
+            <div className="text-sm text-gray-500">Carregando...</div>
+          ) : dailyCareData.length === 0 ? (
+            <div className="text-sm text-gray-500">Nenhum cuidado marcado hoje.</div>
+          ) : (
+            <div className="space-y-2">
+              {dailyCareData.map((care: any) => (
+                <div key={care.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                  <div className="text-sm text-gray-800">{care.type}</div>
+                  <div className="text-xs text-gray-600">{care.scheduledTime || '—'} • {new Date(care.date).toLocaleTimeString('pt-BR')}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowCalendarModal(false)} className="flex-1">Fechar</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showCareConfigModal} onClose={() => setShowCareConfigModal(false)} title="Configurar Rotina">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Hormônios</label>
+            <input type="time" value={hormonesTime} onChange={(e) => setHormonesTime(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Remédio</label>
+            <input type="time" value={medicineTime} onChange={(e) => setMedicineTime(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Alimentação</label>
+            <input type="time" value={foodTime} onChange={(e) => setFoodTime(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Exercício</label>
+            <input type="time" value={exerciseTime} onChange={(e) => setExerciseTime(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md" />
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => {
+                localStorage.setItem('care_hormones_time', hormonesTime);
+                localStorage.setItem('care_medicine_time', medicineTime);
+                localStorage.setItem('care_food_time', foodTime);
+                localStorage.setItem('care_exercise_time', exerciseTime);
+                setShowCareConfigModal(false);
+                alert('Rotina salva');
+              }}
+              className="flex-1"
+            >Salvar</Button>
+            <Button variant="outline" onClick={() => setShowCareConfigModal(false)}>Cancelar</Button>
           </div>
         </div>
       </Modal>
