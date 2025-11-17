@@ -3,8 +3,6 @@
  * Testa todas as funcionalidades CRUD do sistema
  */
 
-import { trpcFetch } from '../web/src/lib/trpc.js';
-
 const BASE_URL = process.env.TRPC_URL || 'http://localhost:3000/trpc';
 
 // Helper para fazer chamadas tRPC
