@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Modal } from '../components/ui/modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpcFetch } from '../lib/trpc';
-import { formatCurrency, parseBrazilianNumber, formatCurrencyInput, getAuthenticatedUser, exportToCSV, formatTransactionsForExport } from '../lib/utils';
+import { formatCurrency, parseBrazilianNumber, formatCurrencyInput, getAuthenticatedUser } from '../lib/utils';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -326,7 +326,7 @@ export default function Dashboard() {
       <div className="bg-white shadow-sm p-4">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard Financeiro</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Hz Soluções</h1>
             <p className="text-sm text-gray-600">Bem-vindo, {user.name || 'Usuário'}!</p>
           </div>
           <Button variant="outline" onClick={() => { localStorage.clear(); location.reload(); }}>
@@ -345,28 +345,8 @@ export default function Dashboard() {
           <Button variant="outline" size="sm" onClick={() => changeMonth('next')}>
             Próximo
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={async () => {
-              try {
-                const transactions = await trpcFetch<any[]>('getTransactions', {
-                  userId: user.id,
-                  year,
-                  month,
-                });
-                if (transactions.length === 0) {
-                  alert('Nenhuma transação para exportar neste período');
-                  return;
-                }
-                const formatted = formatTransactionsForExport(transactions);
-                exportToCSV(formatted, `transacoes_${month}_${year}`);
-              } catch (error: any) {
-                alert('Erro ao exportar: ' + error.message);
-              }
-            }}
-          >
-            Exportar CSV
+          <Button variant="outline" size="sm">
+            Exportar
           </Button>
         </div>
       </div>
@@ -434,21 +414,7 @@ export default function Dashboard() {
                   )}
                   {(!isCareMarked('hormones') || !isCareMarked('medicine')) && (
                     <div className="space-y-1 mt-2">
-                      {!isCareMarked('hormones') && (
-                        <Button 
-                          size="sm" 
-                          className="w-full text-xs touch-manipulation min-h-[32px]" 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            markCare.mutate('hormones');
-                          }} 
-                          disabled={markCare.isPending}
-                          style={{ touchAction: 'manipulation' }}
-                        >
-                          {markCare.isPending ? '...' : 'Hormônios'}
-                        </Button>
-                      )}
+                      {/* Ocultamos o botão de Hormônios conforme solicitado */}
                       {!isCareMarked('medicine') && (
                         <Button 
                           size="sm" 
@@ -622,67 +588,22 @@ export default function Dashboard() {
         {/* Ações Rápidas */}
         <div>
           <h2 className="text-lg font-semibold mb-3 text-gray-700">Atalhos para suas rotinas diárias</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card 
-              className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation" 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowExpenseModal(true);
-              }}
-              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
-            >
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
+            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
               <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-pink-600 text-2xl">↓</span>
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-blue-600 text-xl">🎯</span>
                 </div>
-                <div className="text-sm font-medium text-gray-700">Registrar gasto</div>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation" 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowIncomeModal(true);
-              }}
-              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
-            >
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-green-600 text-2xl">↑</span>
-                </div>
-                <div className="text-sm font-medium text-gray-700">Adicionar receita</div>
+                <div className="text-sm font-medium text-gray-700">Metas</div>
               </CardContent>
             </Card>
 
             <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
               <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-blue-600 text-xl">🔔</span>
-                </div>
-                <div className="text-sm font-medium text-gray-700">WhatsApp diário</div>
-              </CardContent>
-            </Card>
-
-            <Card 
-              className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation" 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowItemModal(true);
-              }}
-              style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
-            >
-              <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-yellow-600 text-xl">📋</span>
+                  <span className="text-yellow-600 text-xl">💼</span>
                 </div>
-                <div className="text-sm font-medium text-gray-700">Pendentes e comprados</div>
-                <div className="text-xs text-gray-500 mt-1">
-                  {loadingItems ? '...' : `${pendingItems.length} pendente${pendingItems.length !== 1 ? 's' : ''}`}
-                </div>
+                <div className="text-sm font-medium text-gray-700">Projetos e investimentos</div>
               </CardContent>
             </Card>
           </div>
@@ -692,32 +613,32 @@ export default function Dashboard() {
           <h2 className="text-lg font-semibold mb-3 text-gray-700">Contas Bancárias</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
-              { key: 'itau', name: 'Itaú', bg: '#ff6b00', fg: '#ffffff', border: '#cc5600' },
-              { key: 'santander', name: 'Santander', bg: '#ec0000', fg: '#ffffff', border: '#b00000' },
-              { key: 'bb', name: 'Banco do Brasil', bg: '#ffdd00', fg: '#002776', border: '#e6c800' },
-              { key: 'bradesco', name: 'Bradesco', bg: '#c41e3a', fg: '#ffffff', border: '#9f1830' },
-              { key: 'caixa', name: 'Caixa', bg: '#0c5fa8', fg: '#ffffff', border: '#084a86' },
-              { key: 'nubank', name: 'Nubank', bg: '#820ad1', fg: '#ffffff', border: '#6a08ac' },
+              { key: 'itau', name: 'Itaú', bg: '#ff6b00', fg: '#ffffff', border: '#cc5600', logo: 'https://upload.wikimedia.org/wikipedia/commons/3/37/Ita%C3%BA_Unibanco_logo_2023.svg' },
+              { key: 'santander', name: 'Santander', bg: '#ec0000', fg: '#ffffff', border: '#b00000', logo: 'https://upload.wikimedia.org/wikipedia/commons/2/25/Banco_Santander_Logotipo.svg' },
+              { key: 'bb', name: 'Banco do Brasil', bg: '#ffdd00', fg: '#002776', border: '#e6c800', logo: 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Banco_do_Brasil_logo.svg' },
+              { key: 'bradesco', name: 'Bradesco', bg: '#c41e3a', fg: '#ffffff', border: '#9f1830', logo: 'https://upload.wikimedia.org/wikipedia/commons/f/f2/Banco_Bradesco_logo.svg' },
+              { key: 'caixa', name: 'Caixa', bg: '#0c5fa8', fg: '#ffffff', border: '#084a86', logo: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Caixa_Econ%C3%B4mica_Federal_logo_1997.svg' },
+              { key: 'nubank', name: 'Nubank', bg: '#820ad1', fg: '#ffffff', border: '#6a08ac', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Nubank_logo_2021.svg' },
             ].map((b) => (
-              <Card key={b.key} style={{ borderColor: b.border }}>
+              <Card key={b.key} style={{ borderColor: b.border, backgroundColor: b.bg }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <div style={{ backgroundColor: b.bg, color: b.fg }} className="w-10 h-10 rounded flex items-center justify-center font-bold">
-                      <span className="text-sm">{b.name.slice(0,2).toUpperCase()}</span>
+                    <div className="w-10 h-10 rounded flex items-center justify-center bg-white/15">
+                      <img src={b.logo} alt={`${b.name} logo`} className="h-8 w-auto" />
                     </div>
-                    <div className="font-semibold text-gray-800">{b.name}</div>
+                    <div className="font-semibold" style={{ color: b.fg }}>{b.name}</div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-gray-50 border border-gray-200 rounded p-2">
-                      <div className="text-xs text-gray-600">Saldo</div>
+                    <div className="bg-white border border-gray-200 rounded p-2">
+                      <div className="text-xs text-gray-700">Saldo</div>
                       <div className="text-sm font-bold" style={{ color: b.bg }}>R$ 0,00</div>
                     </div>
-                    <div className="bg-gray-50 border border-gray-200 rounded p-2">
-                      <div className="text-xs text-gray-600">Cartão • Limite</div>
+                    <div className="bg-white border border-gray-200 rounded p-2">
+                      <div className="text-xs text-gray-700">Cartão • Limite</div>
                       <div className="text-sm font-bold" style={{ color: b.bg }}>R$ 0,00</div>
                     </div>
-                    <div className="bg-gray-50 border border-gray-200 rounded p-2">
-                      <div className="text-xs text-gray-600">Cartão • Fatura</div>
+                    <div className="bg-white border border-gray-200 rounded p-2">
+                      <div className="text-xs text-gray-700">Cartão • Fatura</div>
                       <div className="text-sm font-bold" style={{ color: b.bg }}>R$ 0,00</div>
                     </div>
                   </div>

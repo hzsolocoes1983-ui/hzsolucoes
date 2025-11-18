@@ -5,20 +5,10 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm start
     rootDir: hz-solucoes/apps/server
-    autoDeploy: true
-    branch: main
     envVars:
       - key: NODE_VERSION
         value: 20
       - key: PORT
         sync: false
-      - key: DATABASE_URL
-        value: file:./local.db
-      - key: CORS_ORIGIN
-        value: "*"
-      - key: DEFAULT_WHATSAPP
-        value: family@local
-      - key: DEFAULT_NAME
-        value: Família
     healthCheckPath: /health
 

@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { trpcFetch } from '../lib/trpc';
-import { formatCurrency, requireAuth, exportToCSV, exportToPDF } from '../lib/utils';
+import { formatCurrency, requireAuth } from '../lib/utils';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function ReportsPage() {
@@ -106,69 +106,6 @@ export default function ReportsPage() {
           </Button>
           <Button variant="outline" size="sm" onClick={() => changeMonth('next')}>
             →
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => {
-              const csvData = expensesByCategory.map((item: any) => ({
-                'Categoria': item.category || 'Sem categoria',
-                'Total': formatCurrency(Number(item.total || 0)),
-                '% do Total': totalExpenses > 0 
-                  ? `${((Number(item.total || 0) / totalExpenses) * 100).toFixed(1)}%`
-                  : '0%'
-              }));
-              exportToCSV(csvData, `relatorio_categoria_${month}_${year}`);
-            }}
-            disabled={expensesByCategory.length === 0}
-          >
-            Exportar CSV
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => {
-              const tableRows = expensesByCategory.map((item: any) => {
-                const percentage = totalExpenses > 0 
-                  ? ((Number(item.total || 0) / totalExpenses) * 100).toFixed(1)
-                  : '0.0';
-                return `
-                  <tr>
-                    <td>${item.category || 'Sem categoria'}</td>
-                    <td>${formatCurrency(Number(item.total || 0))}</td>
-                    <td>${percentage}%</td>
-                  </tr>
-                `;
-              }).join('');
-              
-              const table = `
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Categoria</th>
-                      <th>Total</th>
-                      <th>% do Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${tableRows}
-                    <tr style="font-weight: bold; border-top: 2px solid #000;">
-                      <td>Total</td>
-                      <td>${formatCurrency(totalExpenses)}</td>
-                      <td>100%</td>
-                    </tr>
-                  </tbody>
-                </table>
-              `;
-              
-              exportToPDF(
-                `Relatório Financeiro - ${monthNames[month - 1]}/${year}`,
-                `<p>Total de Despesas: <strong>${formatCurrency(totalExpenses)}</strong></p>${table}`
-              );
-            }}
-            disabled={expensesByCategory.length === 0}
-          >
-            Exportar PDF
           </Button>
         </div>
       </div>

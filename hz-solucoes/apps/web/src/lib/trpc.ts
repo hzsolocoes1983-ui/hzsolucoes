@@ -10,10 +10,6 @@ type AppRouter = {
     input: { whatsapp: string; password: string };
     output: { token: string; user: any };
   };
-  loginGuest: {
-    input: any; // Aceita qualquer input (objeto vazio, undefined, null, etc)
-    output: { token: string; user: any };
-  };
   register: {
     input: { whatsapp: string; name: string; password: string };
     output: void;
@@ -112,11 +108,10 @@ export async function trpcFetch<T>(
   });
   
   try {
-    // O tRPC Express adapter espera o body como um array batch
-    // Formato: [{ id: number, json: input }]
+    // O tRPC Express adapter (createExpressMiddleware) aceita corpo no formato { input: <dados> }
+    // Usamos o formato simples não-batch para chamadas diretas a um procedimento
     const requestBody = {
-      id: 1,
-      json: input
+      input: input
     };
     
     console.log(`[tRPC] Request body:`, JSON.stringify(requestBody, null, 2));
