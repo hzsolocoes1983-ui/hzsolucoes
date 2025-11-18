@@ -668,15 +668,15 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700">
+            <Card className="bg-white/10 backdrop-blur-sm text-white border-0">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                    <span className="text-blue-600 text-lg">■</span>
+                  <div className="w-8 h-8 bg-white/20 rounded flex items-center justify-center">
+                    <span className="text-white text-lg">■</span>
                   </div>
-                  <div className="text-xs text-gray-600 dark:text-neutral-300">Saldo</div>
+                  <div className="text-xs text-white">Saldo</div>
                 </div>
-                <div className={`text-xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <div className={`text-xl font-bold text-white`}>
                   {isLoading ? '...' : formatCurrency(summary.balance)}
                 </div>
               </CardContent>
@@ -688,21 +688,21 @@ export default function Dashboard() {
         <div>
           <h2 className="text-lg font-semibold mb-3 text-gray-700 dark:text-neutral-100">Atalhos para suas rotinas diárias</h2>
           <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
-            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
+            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation bg-white/10 backdrop-blur-sm text-white border-0" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
               <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-blue-600 text-xl">🎯</span>
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-white text-xl">🎯</span>
                 </div>
-                <div className="text-sm font-medium text-gray-700 dark:text-neutral-100">Metas</div>
+                <div className="text-sm font-medium text-white">Metas</div>
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
+            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation bg-white/10 backdrop-blur-sm text-white border-0" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
               <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-yellow-600 text-xl">💼</span>
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-white text-xl">💼</span>
                 </div>
-                <div className="text-sm font-medium text-gray-700 dark:text-neutral-100">Projetos e investimentos</div>
+                <div className="text-sm font-medium text-white">Projetos e investimentos</div>
               </CardContent>
             </Card>
           </div>
@@ -727,19 +727,9 @@ export default function Dashboard() {
                     </div>
                     <div className="font-semibold text-white">{b.name}</div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-white/15 backdrop-blur-sm rounded p-2">
-                      <div className="text-xs text-white">Saldo</div>
-                      <div className="text-sm font-bold text-white">R$ 0,00</div>
-                    </div>
-                    <div className="bg-white/15 backdrop-blur-sm rounded p-2">
-                      <div className="text-xs text-white">Cartão • Limite</div>
-                      <div className="text-sm font-bold text-white">R$ 0,00</div>
-                    </div>
-                    <div className="bg-white/15 backdrop-blur-sm rounded p-2">
-                      <div className="text-xs text-white">Cartão • Fatura</div>
-                      <div className="text-sm font-bold text-white">R$ 0,00</div>
-                    </div>
+                  <div className="mt-1">
+                    <div className="text-xs text-white/90">Saldo</div>
+                    <div className="text-sm font-bold text-white">R$ 0,00</div>
                   </div>
                 </CardContent>
               </Card>
