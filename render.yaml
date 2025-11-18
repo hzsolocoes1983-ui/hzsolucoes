@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: hz-solucoes-backend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    rootDir: hz-solucoes/apps/server
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        sync: false
+    healthCheckPath: /health

@@ -16,6 +16,11 @@ export default function Dashboard() {
   // Estados dos modais
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showQuickModal, setShowQuickModal] = useState(false);
+  const [quickText, setQuickText] = useState('');
+  const [quickDetectedType, setQuickDetectedType] = useState<'income' | 'expense' | null>(null);
+  const [quickDetectedAmount, setQuickDetectedAmount] = useState<number | null>(null);
   const [showItemModal, setShowItemModal] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showCareConfigModal, setShowCareConfigModal] = useState(false);
@@ -273,6 +278,85 @@ export default function Dashboard() {
     }
   });
 
+  // Quick add mutation (auto classifica Receita/Despesa)
+  const addQuick = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error('Usuário não encontrado. Faça login novamente.');
+
+      // Detecta amount e tipo a partir do texto
+      const analyze = (text: string) => {
+        const lower = text.toLowerCase();
+
+        const incomeKeywords = ['receita', 'salario', 'salário', 'ganho', 'ganhei', 'entrada', 'freelance', 'freelancer', 'pix', 'depósito', 'deposito', 'bonus', 'bônus'];
+        const expenseKeywords = ['despesa', 'pagar', 'pagamento', 'parcela', 'conta', 'aluguel', 'mercado', 'farmacia', 'farmácia', 'combustivel', 'combustível', 'gasolina', 'fatura', 'cartão', 'cartao', 'boleto', 'compra', 'compras'];
+
+        const hasIncome = incomeKeywords.some(k => lower.includes(k));
+        const hasExpense = expenseKeywords.some(k => lower.includes(k));
+
+        let type: 'income' | 'expense' = hasIncome && !hasExpense ? 'income' : 'expense';
+
+        // Extrai primeiro número (suporta 1.234,56 | 1234,56 | 1234.56 | 1234)
+        const numMatch = lower.match(/\d{1,3}(?:\.\d{3})*,\d{2}|\d+(?:[\.,]\d{2})?|\d+/);
+        let amount = 0;
+        if (numMatch) {
+          const raw = numMatch[0];
+          // Normaliza para formato brasileiro e usa parser existente
+          const normalized = raw.replace(/\./g, '').replace(/,/g, '.');
+          amount = parseFloat(normalized);
+        }
+
+        return { type, amount };
+      };
+
+      const { type, amount } = analyze(quickText);
+      if (!amount || amount <= 0) throw new Error('Informe um valor válido no texto.');
+
+      // Garante que userId seja número
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+
+      const input = {
+        userId,
+        type,
+        amount,
+        description: quickText || undefined,
+      } as const;
+
+      await trpcFetch('addTransaction', input);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['summary'] });
+      queryClient.invalidateQueries({ queryKey: ['recentExpenses'] });
+      setQuickText('');
+      setShowQuickModal(false);
+      alert('Registro salvo com sucesso!');
+    },
+    onError: (error: any) => alert('Erro: ' + error.message)
+  });
+
+  // Atualiza preview de detecção quando o usuário digita
+  useEffect(() => {
+    const text = quickText.trim();
+    if (!text) {
+      setQuickDetectedType(null);
+      setQuickDetectedAmount(null);
+      return;
+    }
+    const lower = text.toLowerCase();
+    const incomeKeywords = ['receita', 'salario', 'salário', 'ganho', 'ganhei', 'entrada', 'freelance', 'freelancer', 'pix', 'depósito', 'deposito', 'bonus', 'bônus'];
+    const expenseKeywords = ['despesa', 'pagar', 'pagamento', 'parcela', 'conta', 'aluguel', 'mercado', 'farmacia', 'farmácia', 'combustivel', 'combustível', 'gasolina', 'fatura', 'cartão', 'cartao', 'boleto', 'compra', 'compras'];
+    const hasIncome = incomeKeywords.some(k => lower.includes(k));
+    const hasExpense = expenseKeywords.some(k => lower.includes(k));
+    const type = hasIncome && !hasExpense ? 'income' : 'expense';
+    const numMatch = lower.match(/\d{1,3}(?:\.\d{3})*,\d{2}|\d+(?:[\.,]\d{2})?|\d+/);
+    let amount: number | null = null;
+    if (numMatch) {
+      const normalized = numMatch[0].replace(/\./g, '').replace(/,/g, '.');
+      amount = parseFloat(normalized);
+    }
+    setQuickDetectedType(type);
+    setQuickDetectedAmount(amount);
+  }, [quickText]);
+
   const addWater = useMutation({
     mutationFn: async () => {
       await trpcFetch('addWaterIntake', {
@@ -321,17 +405,32 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
+    <div className="min-h-screen bg-gray-50 dark:bg-neutral-950 pb-20" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
       {/* Header */}
-      <div className="bg-white shadow-sm p-4">
+      <div className="bg-white dark:bg-gray-800 shadow-sm p-4">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Hz Soluções</h1>
-            <p className="text-sm text-gray-600">Bem-vindo, {user.name || 'Usuário'}!</p>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Hz Soluções</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Bem-vindo, {user.name || 'Usuário'}!</p>
           </div>
-          <Button variant="outline" onClick={() => { localStorage.clear(); location.reload(); }}>
-            Sair
-          </Button>
+          <div className="flex gap-2 items-center">
+            <Button variant="outline" onClick={() => {
+              const root = document.documentElement;
+              const next = !root.classList.contains('dark');
+              if (next) {
+                root.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+              } else {
+                root.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+              }
+            }}>
+              Modo escuro
+            </Button>
+            <Button variant="outline" onClick={() => { localStorage.clear(); location.reload(); }}>
+              Sair
+            </Button>
+          </div>
         </div>
         
         {/* Navegação de mês */}
@@ -351,7 +450,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="p-4 space-y-6 max-w-6xl mx-auto">
+      <div className="p-4 space-y-6 max-w-6xl mx-auto bg-gray-50 dark:bg-neutral-950 min-h-screen">
         {/* Mensagem de erro se houver */}
         {summaryError && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -525,57 +624,57 @@ export default function Dashboard() {
 
         {/* Resumo */}
         <div>
-          <h2 className="text-lg font-semibold mb-3 text-gray-700">Visão rápida dos principais números</h2>
+          <h2 className="text-lg font-semibold mb-3 text-gray-700 dark:text-neutral-100">Visão rápida dos principais números</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card>
+            <Card className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 bg-green-100 rounded flex items-center justify-center">
                     <span className="text-green-600 text-lg">↑</span>
                   </div>
-                  <div className="text-xs text-gray-600">Receita do mês</div>
+                  <div className="text-xs text-gray-600 dark:text-neutral-300">Receita do mês</div>
                 </div>
-                <div className="text-xl font-bold text-gray-800">
+                <div className="text-xl font-bold text-gray-800 dark:text-neutral-100">
                   {isLoading ? '...' : formatCurrency(summary.revenue)}
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 bg-pink-100 rounded flex items-center justify-center">
                     <span className="text-pink-600 text-lg">~</span>
                   </div>
-                  <div className="text-xs text-gray-600">Gastos variáveis</div>
+                  <div className="text-xs text-gray-600 dark:text-neutral-300">Gastos variáveis</div>
                 </div>
-                <div className="text-xl font-bold text-gray-800">
+                <div className="text-xl font-bold text-gray-800 dark:text-neutral-100">
                   {isLoading ? '...' : formatCurrency(summary.expenses)}
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 bg-yellow-100 rounded flex items-center justify-center">
                     <span className="text-yellow-600 text-lg">~</span>
                   </div>
-                  <div className="text-xs text-gray-600">Mensais</div>
+                  <div className="text-xs text-gray-600 dark:text-neutral-300">Mensais</div>
                 </div>
-                <div className="text-xl font-bold text-gray-800">
+                <div className="text-xl font-bold text-gray-800 dark:text-neutral-100">
                   {isLoading ? '...' : formatCurrency(summary.fixed)}
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
                     <span className="text-blue-600 text-lg">■</span>
                   </div>
-                  <div className="text-xs text-gray-600">Saldo</div>
+                  <div className="text-xs text-gray-600 dark:text-neutral-300">Saldo</div>
                 </div>
                 <div className={`text-xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {isLoading ? '...' : formatCurrency(summary.balance)}
@@ -587,30 +686,30 @@ export default function Dashboard() {
 
         {/* Ações Rápidas */}
         <div>
-          <h2 className="text-lg font-semibold mb-3 text-gray-700">Atalhos para suas rotinas diárias</h2>
+          <h2 className="text-lg font-semibold mb-3 text-gray-700 dark:text-neutral-100">Atalhos para suas rotinas diárias</h2>
           <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
-            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
+            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
               <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
                   <span className="text-blue-600 text-xl">🎯</span>
                 </div>
-                <div className="text-sm font-medium text-gray-700">Metas</div>
+                <div className="text-sm font-medium text-gray-700 dark:text-neutral-100">Metas</div>
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
+            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
               <CardContent className="p-4 text-center">
                 <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
                   <span className="text-yellow-600 text-xl">💼</span>
                 </div>
-                <div className="text-sm font-medium text-gray-700">Projetos e investimentos</div>
+                <div className="text-sm font-medium text-gray-700 dark:text-neutral-100">Projetos e investimentos</div>
               </CardContent>
             </Card>
           </div>
         </div>
 
         <div>
-          <h2 className="text-lg font-semibold mb-3 text-gray-700">Contas Bancárias</h2>
+          <h2 className="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-200">Contas Bancárias</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
               { key: 'itau', name: 'Itaú', bg: '#ff6b00', fg: '#ffffff', border: '#cc5600', logo: 'https://upload.wikimedia.org/wikipedia/commons/3/37/Ita%C3%BA_Unibanco_logo_2023.svg' },
@@ -623,23 +722,23 @@ export default function Dashboard() {
               <Card key={b.key} style={{ borderColor: b.border, backgroundColor: b.bg }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded flex items-center justify-center bg-white/15">
-                      <img src={b.logo} alt={`${b.name} logo`} className="h-8 w-auto" />
+                    <div className="w-12 h-12 rounded bg-white/20 flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">{b.name[0]}</span>
                     </div>
-                    <div className="font-semibold" style={{ color: b.fg }}>{b.name}</div>
+                    <div className="font-semibold text-white">{b.name}</div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-white border border-gray-200 rounded p-2">
-                      <div className="text-xs text-gray-700">Saldo</div>
-                      <div className="text-sm font-bold" style={{ color: b.bg }}>R$ 0,00</div>
+                    <div className="bg-white/10 border border-white/20 rounded p-2">
+                      <div className="text-xs text-white/90">Saldo</div>
+                      <div className="text-sm font-bold text-white">R$ 0,00</div>
                     </div>
-                    <div className="bg-white border border-gray-200 rounded p-2">
-                      <div className="text-xs text-gray-700">Cartão • Limite</div>
-                      <div className="text-sm font-bold" style={{ color: b.bg }}>R$ 0,00</div>
+                    <div className="bg-white/10 border border-white/20 rounded p-2">
+                      <div className="text-xs text-white/90">Cartão • Limite</div>
+                      <div className="text-sm font-bold text-white">R$ 0,00</div>
                     </div>
-                    <div className="bg-white border border-gray-200 rounded p-2">
-                      <div className="text-xs text-gray-700">Cartão • Fatura</div>
-                      <div className="text-sm font-bold" style={{ color: b.bg }}>R$ 0,00</div>
+                    <div className="bg-white/10 border border-white/20 rounded p-2">
+                      <div className="text-xs text-white/90">Cartão • Fatura</div>
+                      <div className="text-sm font-bold text-white">R$ 0,00</div>
                     </div>
                   </div>
                 </CardContent>
@@ -652,17 +751,17 @@ export default function Dashboard() {
       </div>
 
       {/* Navegação Inferior */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2">
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 border-t border-gray-200 dark:border-neutral-800 px-4 py-2">
         <div className="flex justify-around items-center max-w-md mx-auto">
           <button 
-            className="flex flex-col items-center gap-1 text-gray-600"
+            className="flex flex-col items-center gap-1 text-gray-600 dark:text-neutral-300"
             onClick={() => window.location.href = '/dashboard'}
           >
             <span className="text-xl">🏠</span>
             <span className="text-xs">Início</span>
           </button>
           <button 
-            className="flex flex-col items-center gap-1 text-gray-600"
+            className="flex flex-col items-center gap-1 text-gray-600 dark:text-neutral-300"
             onClick={() => window.location.href = '/transactions'}
           >
             <span className="text-xl">~</span>
@@ -670,19 +769,19 @@ export default function Dashboard() {
           </button>
           <button 
             className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg"
-            onClick={() => setShowExpenseModal(true)}
+            onClick={() => setShowAddModal(true)}
           >
             <span className="text-2xl">+</span>
           </button>
           <button 
-            className="flex flex-col items-center gap-1 text-gray-600"
+            className="flex flex-col items-center gap-1 text-gray-600 dark:text-neutral-300"
             onClick={() => window.location.href = '/reports'}
           >
             <span className="text-xl">📊</span>
             <span className="text-xs">Relatórios</span>
           </button>
           <button 
-            className="flex flex-col items-center gap-1 text-gray-600"
+            className="flex flex-col items-center gap-1 text-gray-600 dark:text-neutral-300"
             onClick={() => window.location.href = '/items'}
           >
             <span className="text-xl">📋</span>
@@ -724,7 +823,7 @@ export default function Dashboard() {
         </div>
       </Modal>
 
-      <Modal isOpen={showIncomeModal} onClose={() => setShowIncomeModal(false)} title="Adicionar Receita">
+      <Modal isOpen={showIncomeModal} onClose={() => setShowIncomeModal(false)} title="Registrar Receita">
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
@@ -752,6 +851,57 @@ export default function Dashboard() {
               {addIncome.isPending ? 'Salvando...' : 'Salvar'}
             </Button>
             <Button variant="outline" onClick={() => setShowIncomeModal(false)}>Cancelar</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="O que deseja registrar?">
+        <div className="space-y-3">
+          <Button 
+            className="w-full" 
+            onClick={() => { setShowAddModal(false); setShowExpenseModal(true); }}
+          >
+            Despesa
+          </Button>
+          <Button 
+            className="w-full" 
+            variant="outline"
+            onClick={() => { setShowAddModal(false); setShowIncomeModal(true); }}
+          >
+            Receita
+          </Button>
+          <Button 
+            className="w-full" 
+            variant="secondary"
+            onClick={() => { setShowAddModal(false); setShowQuickModal(true); }}
+          >
+            Registro rápido (texto)
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Registro rápido com detecção automática */}
+      <Modal isOpen={showQuickModal} onClose={() => setShowQuickModal(false)} title="Registro rápido (auto)">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Texto</label>
+            <input
+              type="text"
+              value={quickText}
+              onChange={(e) => setQuickText(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Ex: 2000 parcela carro ou 3000 ganho freelance"
+            />
+          </div>
+          <div className="text-xs text-gray-600">
+            Detectado: {quickDetectedType === 'income' ? 'Receita' : quickDetectedType === 'expense' ? 'Despesa' : '—'}
+            {typeof quickDetectedAmount === 'number' ? ` • Valor: R$ ${quickDetectedAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={() => addQuick.mutate()} disabled={addQuick.isPending || !quickText.trim()} className="flex-1">
+              {addQuick.isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+            <Button variant="outline" onClick={() => setShowQuickModal(false)}>Cancelar</Button>
           </div>
         </div>
       </Modal>
