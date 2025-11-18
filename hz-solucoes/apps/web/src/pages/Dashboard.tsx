@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [medicineTime, setMedicineTime] = useState(localStorage.getItem('care_medicine_time') || '08:00');
   const [foodTime, setFoodTime] = useState(localStorage.getItem('care_food_time') || '08:30');
   const [exerciseTime, setExerciseTime] = useState(localStorage.getItem('care_exercise_time') || '11:10');
+  const [expandedBank, setExpandedBank] = useState<string | null>(null);
   
   // Verifica autenticação
   const user = getAuthenticatedUser();
@@ -719,7 +720,13 @@ export default function Dashboard() {
               { key: 'caixa', name: 'Caixa', bg: '#0c5fa8', fg: '#ffffff', border: '#084a86', logo: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Caixa_Econ%C3%B4mica_Federal_logo_1997.svg' },
               { key: 'nubank', name: 'Nubank', bg: '#820ad1', fg: '#ffffff', border: '#6a08ac', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Nubank_logo_2021.svg' },
             ].map((b) => (
-              <Card key={b.key} style={{ borderColor: b.border, backgroundColor: b.bg }}>
+              <Card
+                key={b.key}
+                style={{ borderColor: b.border, backgroundColor: b.bg }}
+                className="cursor-pointer hover:shadow-md active:scale-[0.99] transition"
+                onClick={() => setExpandedBank(expandedBank === b.key ? null : b.key)}
+                aria-expanded={expandedBank === b.key}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-12 h-12 rounded bg-white/20 flex items-center justify-center">
@@ -727,10 +734,12 @@ export default function Dashboard() {
                     </div>
                     <div className="font-semibold text-white">{b.name}</div>
                   </div>
-                  <div className="mt-1">
-                    <div className="text-xs text-white/90">Saldo</div>
-                    <div className="text-sm font-bold text-white">R$ 0,00</div>
-                  </div>
+                  {expandedBank === b.key && (
+                    <div className="mt-1">
+                      <div className="text-xs text-white/90">Saldo</div>
+                      <div className="text-sm font-bold text-white">R$ 0,00</div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
