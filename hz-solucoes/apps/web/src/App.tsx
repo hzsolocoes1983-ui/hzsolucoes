@@ -18,7 +18,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true, // Atualiza quando volta para a aba
+      refetchOnMount: true, // Atualiza quando o componente é montado
+      staleTime: 0, // Dados são considerados "stale" imediatamente, forçando refetch
+      gcTime: 5 * 60 * 1000, // Mantém dados em cache por 5 minutos (antes era cacheTime)
     },
   },
 });

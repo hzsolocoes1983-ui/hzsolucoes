@@ -8,6 +8,21 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        // Não cachear chamadas de API
+        runtimeCaching: [
+          {
+            urlPattern: /^https?:\/\/.*\/trpc\/.*/i,
+            handler: 'NetworkOnly', // Sempre busca do servidor, nunca do cache
+            options: {
+              cacheName: 'trpc-api',
+              networkTimeoutSeconds: 10,
+            },
+          },
+        ],
+        // Não precachear arquivos de API
+        navigateFallback: null,
+      },
       manifest: {
         name: 'HZ Soluções',
         short_name: 'HZ',

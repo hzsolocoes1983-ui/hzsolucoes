@@ -125,21 +125,35 @@ export async function trpcFetch<T>(
   });
   
   try {
-    // O tRPC Express adapter (createExpressMiddleware) aceita corpo no formato { input: <dados> }
-    // Usamos o formato simples não-batch para chamadas diretas a um procedimento
+    // O tRPC Express adapter espera o formato: { input: <dados> } para mutations
+    // Vamos garantir que o input seja sempre um objeto válido e não undefined
+    if (!input) {
+      console.error(`[tRPC] Input é undefined/null para ${procedure}`);
+      throw new Error(`Input inválido para ${procedure}: input não pode ser undefined ou null`);
+    }
+    
+    if (typeof input !== 'object' || Array.isArray(input)) {
+      console.error(`[tRPC] Input deve ser um objeto para ${procedure}, recebido:`, typeof input, input);
+      throw new Error(`Input inválido para ${procedure}: deve ser um objeto`);
+    }
+    
+    // Cria o body no formato que o tRPC Express adapter espera
     const requestBody = {
       input: input
     };
     
-    console.log(`[tRPC] Request body:`, JSON.stringify(requestBody, null, 2));
-    console.log(`[tRPC] Input serializado:`, JSON.stringify(input));
-    console.log(`[tRPC] Input keys:`, input ? Object.keys(input) : 'null');
-    console.log(`[tRPC] Input values:`, input ? Object.values(input) : 'null');
+    console.log(`[tRPC] ${procedure} - Request body:`, JSON.stringify(requestBody, null, 2));
+    console.log(`[tRPC] ${procedure} - Input keys:`, Object.keys(input));
+    console.log(`[tRPC] ${procedure} - Input values:`, Object.values(input));
+    console.log(`[tRPC] ${procedure} - Input completo:`, input);
     
     const response = await fetch(url, isMutation
       ? {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
           body: JSON.stringify(requestBody),
         }
       : {

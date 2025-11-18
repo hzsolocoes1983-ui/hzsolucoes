@@ -1,13 +1,34 @@
 /**
  * Converte string brasileira (com vírgula) para número
  * Ex: "1.234,56" -> 1234.56
+ * Ex: "1.000,00" -> 1000.00
+ * Ex: "1000" -> 1000
  */
 export function parseBrazilianNumber(value: string): number {
-  if (!value) return 0;
-  // Remove espaços e substitui vírgula por ponto
-  const cleaned = value.trim().replace(/\./g, '').replace(',', '.');
+  if (!value || typeof value !== 'string') return 0;
+  
+  // Remove espaços
+  let cleaned = value.trim();
+  
+  // Se estiver vazio após trim, retorna 0
+  if (cleaned === '') return 0;
+  
+  // Remove pontos (separadores de milhar)
+  cleaned = cleaned.replace(/\./g, '');
+  
+  // Substitui vírgula (separador decimal) por ponto
+  cleaned = cleaned.replace(',', '.');
+  
+  // Tenta parsear
   const parsed = parseFloat(cleaned);
-  return isNaN(parsed) ? 0 : parsed;
+  
+  // Se não for um número válido, retorna 0
+  if (isNaN(parsed) || !isFinite(parsed)) {
+    console.warn(`[parseBrazilianNumber] Valor inválido: "${value}" -> "${cleaned}"`);
+    return 0;
+  }
+  
+  return parsed;
 }
 
 /**

@@ -183,24 +183,40 @@ export default function Dashboard() {
       if (!user?.id) {
         throw new Error('Usuário não encontrado. Faça login novamente.');
       }
+      
+      if (!expenseAmount || expenseAmount.trim() === '') {
+        throw new Error('Por favor, informe um valor');
+      }
+      
       const amount = parseBrazilianNumber(expenseAmount);
-      if (!amount || amount <= 0) {
-        throw new Error('Valor inválido');
+      if (!amount || amount <= 0 || isNaN(amount)) {
+        throw new Error('Valor inválido. Use o formato: 1.000,00');
       }
       
       // Garante que userId seja um número
       const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       
+      if (!userId || isNaN(userId)) {
+        throw new Error('ID do usuário inválido. Faça login novamente.');
+      }
+      
       const input = {
-        userId: userId,
+        userId: Number(userId),
         type: 'expense' as const,
-        amount: amount,
-        description: expenseDesc || undefined,
+        amount: Number(amount),
+        description: expenseDesc?.trim() || undefined,
       };
       
+      // Validação final antes de enviar
+      if (!input.userId || !input.type || !input.amount) {
+        console.error('[Dashboard] Dados inválidos antes de enviar:', input);
+        throw new Error('Dados inválidos. Verifique os campos preenchidos.');
+      }
+      
       console.log('[Dashboard] Enviando addTransaction:', input);
-      console.log('[Dashboard] User ID type:', typeof userId, 'value:', userId);
-      console.log('[Dashboard] Amount type:', typeof amount, 'value:', amount);
+      console.log('[Dashboard] User ID type:', typeof input.userId, 'value:', input.userId);
+      console.log('[Dashboard] Amount type:', typeof input.amount, 'value:', input.amount);
+      console.log('[Dashboard] Type:', input.type);
       
       await trpcFetch('addTransaction', input);
     },
@@ -222,24 +238,40 @@ export default function Dashboard() {
       if (!user?.id) {
         throw new Error('Usuário não encontrado. Faça login novamente.');
       }
+      
+      if (!incomeAmount || incomeAmount.trim() === '') {
+        throw new Error('Por favor, informe um valor');
+      }
+      
       const amount = parseBrazilianNumber(incomeAmount);
-      if (!amount || amount <= 0) {
-        throw new Error('Valor inválido');
+      if (!amount || amount <= 0 || isNaN(amount)) {
+        throw new Error('Valor inválido. Use o formato: 1.000,00');
       }
       
       // Garante que userId seja um número
       const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       
+      if (!userId || isNaN(userId)) {
+        throw new Error('ID do usuário inválido. Faça login novamente.');
+      }
+      
       const input = {
-        userId: userId,
+        userId: Number(userId),
         type: 'income' as const,
-        amount: amount,
-        description: incomeDesc || undefined,
+        amount: Number(amount),
+        description: incomeDesc?.trim() || undefined,
       };
       
+      // Validação final antes de enviar
+      if (!input.userId || !input.type || !input.amount) {
+        console.error('[Dashboard] Dados inválidos antes de enviar:', input);
+        throw new Error('Dados inválidos. Verifique os campos preenchidos.');
+      }
+      
       console.log('[Dashboard] Enviando addTransaction:', input);
-      console.log('[Dashboard] User ID type:', typeof userId, 'value:', userId);
-      console.log('[Dashboard] Amount type:', typeof amount, 'value:', amount);
+      console.log('[Dashboard] User ID type:', typeof input.userId, 'value:', input.userId);
+      console.log('[Dashboard] Amount type:', typeof input.amount, 'value:', input.amount);
+      console.log('[Dashboard] Type:', input.type);
       
       await trpcFetch('addTransaction', input);
     },
