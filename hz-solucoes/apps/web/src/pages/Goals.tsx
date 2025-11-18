@@ -19,7 +19,8 @@ export default function GoalsPage() {
   const { data: goals = [], isLoading } = useQuery({
     queryKey: ['goals', user.id],
     queryFn: async () => {
-      return await trpcFetch<any[]>('getGoals', { userId: user.id });
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+      return await trpcFetch<any[]>('getGoals', { userId: userId });
     },
   });
 
@@ -30,8 +31,10 @@ export default function GoalsPage() {
         throw new Error('Valor inválido');
       }
       
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+      
       await trpcFetch('addGoal', {
-        userId: user.id,
+        userId: userId,
         name,
         targetAmount: amount,
       });

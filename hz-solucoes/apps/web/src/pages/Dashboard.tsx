@@ -34,7 +34,6 @@ export default function Dashboard() {
   const [medicineTime, setMedicineTime] = useState(localStorage.getItem('care_medicine_time') || '08:00');
   const [foodTime, setFoodTime] = useState(localStorage.getItem('care_food_time') || '08:30');
   const [exerciseTime, setExerciseTime] = useState(localStorage.getItem('care_exercise_time') || '11:10');
-  const [expandedBank, setExpandedBank] = useState<string | null>(null);
   
   // Verifica autenticação
   const user = getAuthenticatedUser();
@@ -183,40 +182,24 @@ export default function Dashboard() {
       if (!user?.id) {
         throw new Error('Usuário não encontrado. Faça login novamente.');
       }
-      
-      if (!expenseAmount || expenseAmount.trim() === '') {
-        throw new Error('Por favor, informe um valor');
-      }
-      
       const amount = parseBrazilianNumber(expenseAmount);
-      if (!amount || amount <= 0 || isNaN(amount)) {
-        throw new Error('Valor inválido. Use o formato: 1.000,00');
+      if (!amount || amount <= 0) {
+        throw new Error('Valor inválido');
       }
       
       // Garante que userId seja um número
       const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       
-      if (!userId || isNaN(userId)) {
-        throw new Error('ID do usuário inválido. Faça login novamente.');
-      }
-      
       const input = {
-        userId: Number(userId),
+        userId: userId,
         type: 'expense' as const,
-        amount: Number(amount),
-        description: expenseDesc?.trim() || undefined,
+        amount: amount,
+        description: expenseDesc || undefined,
       };
       
-      // Validação final antes de enviar
-      if (!input.userId || !input.type || !input.amount) {
-        console.error('[Dashboard] Dados inválidos antes de enviar:', input);
-        throw new Error('Dados inválidos. Verifique os campos preenchidos.');
-      }
-      
       console.log('[Dashboard] Enviando addTransaction:', input);
-      console.log('[Dashboard] User ID type:', typeof input.userId, 'value:', input.userId);
-      console.log('[Dashboard] Amount type:', typeof input.amount, 'value:', input.amount);
-      console.log('[Dashboard] Type:', input.type);
+      console.log('[Dashboard] User ID type:', typeof userId, 'value:', userId);
+      console.log('[Dashboard] Amount type:', typeof amount, 'value:', amount);
       
       await trpcFetch('addTransaction', input);
     },
@@ -238,40 +221,24 @@ export default function Dashboard() {
       if (!user?.id) {
         throw new Error('Usuário não encontrado. Faça login novamente.');
       }
-      
-      if (!incomeAmount || incomeAmount.trim() === '') {
-        throw new Error('Por favor, informe um valor');
-      }
-      
       const amount = parseBrazilianNumber(incomeAmount);
-      if (!amount || amount <= 0 || isNaN(amount)) {
-        throw new Error('Valor inválido. Use o formato: 1.000,00');
+      if (!amount || amount <= 0) {
+        throw new Error('Valor inválido');
       }
       
       // Garante que userId seja um número
       const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       
-      if (!userId || isNaN(userId)) {
-        throw new Error('ID do usuário inválido. Faça login novamente.');
-      }
-      
       const input = {
-        userId: Number(userId),
+        userId: userId,
         type: 'income' as const,
-        amount: Number(amount),
-        description: incomeDesc?.trim() || undefined,
+        amount: amount,
+        description: incomeDesc || undefined,
       };
       
-      // Validação final antes de enviar
-      if (!input.userId || !input.type || !input.amount) {
-        console.error('[Dashboard] Dados inválidos antes de enviar:', input);
-        throw new Error('Dados inválidos. Verifique os campos preenchidos.');
-      }
-      
       console.log('[Dashboard] Enviando addTransaction:', input);
-      console.log('[Dashboard] User ID type:', typeof input.userId, 'value:', input.userId);
-      console.log('[Dashboard] Amount type:', typeof input.amount, 'value:', input.amount);
-      console.log('[Dashboard] Type:', input.type);
+      console.log('[Dashboard] User ID type:', typeof userId, 'value:', userId);
+      console.log('[Dashboard] Amount type:', typeof amount, 'value:', amount);
       
       await trpcFetch('addTransaction', input);
     },
@@ -293,8 +260,9 @@ export default function Dashboard() {
       if (!user?.id) {
         throw new Error('Usuário não encontrado. Faça login novamente.');
       }
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       await trpcFetch('addItem', {
-        userId: user.id,
+        userId: userId,
         name: itemName,
         price: itemPrice ? parseBrazilianNumber(itemPrice) : undefined,
       });
@@ -392,8 +360,12 @@ export default function Dashboard() {
 
   const addWater = useMutation({
     mutationFn: async () => {
+      if (!user?.id) {
+        throw new Error('Usuário não encontrado. Faça login novamente.');
+      }
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       await trpcFetch('addWaterIntake', {
-        userId: user.id,
+        userId: userId,
         amount: 200,
       });
     },
@@ -408,9 +380,13 @@ export default function Dashboard() {
 
   const markCare = useMutation({
     mutationFn: async (type: string) => {
+      if (!user?.id) {
+        throw new Error('Usuário não encontrado. Faça login novamente.');
+      }
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       const time = (type === 'hormones' && hormonesTime) || (type === 'medicine' && medicineTime) || (type === 'food' && foodTime) || (type === 'exercise' && exerciseTime) || '07:00';
       await trpcFetch('markDailyCare', {
-        userId: user.id,
+        userId: userId,
         type,
         scheduledTime: time,
       });
@@ -701,15 +677,15 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/10 backdrop-blur-sm text-white border-0">
+            <Card className="bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 bg-white/20 rounded flex items-center justify-center">
-                    <span className="text-white text-lg">■</span>
+                  <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                    <span className="text-blue-600 text-lg">■</span>
                   </div>
-                  <div className="text-xs text-white">Saldo</div>
+                  <div className="text-xs text-gray-600 dark:text-neutral-300">Saldo</div>
                 </div>
-                <div className={`text-xl font-bold text-white`}>
+                <div className={`text-xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {isLoading ? '...' : formatCurrency(summary.balance)}
                 </div>
               </CardContent>
@@ -721,21 +697,21 @@ export default function Dashboard() {
         <div>
           <h2 className="text-lg font-semibold mb-3 text-gray-700 dark:text-neutral-100">Atalhos para suas rotinas diárias</h2>
           <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
-            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation bg-white/10 backdrop-blur-sm text-white border-0" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
+            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
               <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-white text-xl">🎯</span>
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-blue-600 text-xl">🎯</span>
                 </div>
-                <div className="text-sm font-medium text-white">Metas</div>
+                <div className="text-sm font-medium text-gray-700 dark:text-neutral-100">Metas</div>
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation bg-white/10 backdrop-blur-sm text-white border-0" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
+            <Card className="cursor-pointer hover:shadow-md active:scale-95 transition touch-manipulation bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700" style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
               <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-white text-xl">💼</span>
+                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-yellow-600 text-xl">💼</span>
                 </div>
-                <div className="text-sm font-medium text-white">Projetos e investimentos</div>
+                <div className="text-sm font-medium text-gray-700 dark:text-neutral-100">Projetos e investimentos</div>
               </CardContent>
             </Card>
           </div>
@@ -752,13 +728,7 @@ export default function Dashboard() {
               { key: 'caixa', name: 'Caixa', bg: '#0c5fa8', fg: '#ffffff', border: '#084a86', logo: 'https://upload.wikimedia.org/wikipedia/commons/1/15/Caixa_Econ%C3%B4mica_Federal_logo_1997.svg' },
               { key: 'nubank', name: 'Nubank', bg: '#820ad1', fg: '#ffffff', border: '#6a08ac', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Nubank_logo_2021.svg' },
             ].map((b) => (
-              <Card
-                key={b.key}
-                style={{ borderColor: b.border, backgroundColor: b.bg }}
-                className="cursor-pointer hover:shadow-md active:scale-[0.99] transition"
-                onClick={() => setExpandedBank(expandedBank === b.key ? null : b.key)}
-                aria-expanded={expandedBank === b.key}
-              >
+              <Card key={b.key} style={{ borderColor: b.border, backgroundColor: b.bg }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-12 h-12 rounded bg-white/20 flex items-center justify-center">
@@ -766,12 +736,20 @@ export default function Dashboard() {
                     </div>
                     <div className="font-semibold text-white">{b.name}</div>
                   </div>
-                  {expandedBank === b.key && (
-                    <div className="mt-1">
-                      <div className="text-xs text-white/90">Saldo</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-transparent border border-white/40 rounded p-2">
+                      <div className="text-xs text-white">Saldo</div>
                       <div className="text-sm font-bold text-white">R$ 0,00</div>
                     </div>
-                  )}
+                    <div className="bg-transparent border border-white/40 rounded p-2">
+                      <div className="text-xs text-white">Cartão • Limite</div>
+                      <div className="text-sm font-bold text-white">R$ 0,00</div>
+                    </div>
+                    <div className="bg-transparent border border-white/40 rounded p-2">
+                      <div className="text-xs text-white">Cartão • Fatura</div>
+                      <div className="text-sm font-bold text-white">R$ 0,00</div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             ))}

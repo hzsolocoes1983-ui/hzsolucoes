@@ -19,7 +19,8 @@ export default function ItemsPage() {
   const { data: allItems = [], isLoading } = useQuery({
     queryKey: ['items', user.id],
     queryFn: async () => {
-      return await trpcFetch<any[]>('getItems', { userId: user.id });
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+      return await trpcFetch<any[]>('getItems', { userId: userId });
     },
   });
 
@@ -29,8 +30,9 @@ export default function ItemsPage() {
 
   const addItem = useMutation({
     mutationFn: async () => {
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       await trpcFetch('addItem', {
-        userId: user.id,
+        userId: userId,
         name: itemName,
         price: itemPrice ? parseBrazilianNumber(itemPrice) : undefined,
       });

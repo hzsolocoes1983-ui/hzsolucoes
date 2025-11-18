@@ -26,8 +26,9 @@ export default function TransactionsPage() {
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['transactions', user.id, year, month, filterType],
     queryFn: async () => {
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       const params: any = {
-        userId: user.id,
+        userId: userId,
         year,
         month,
       };
@@ -45,8 +46,11 @@ export default function TransactionsPage() {
         throw new Error('Valor inválido');
       }
       
+      // Garante que userId seja um número
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+      
       await trpcFetch('addTransaction', {
-        userId: user.id,
+        userId: userId,
         type: transactionType,
         amount: amountNum,
         description: description || undefined,

@@ -17,7 +17,8 @@ export default function ReportsPage() {
   const { data: expensesByCategory = [], isLoading: loadingCategory } = useQuery({
     queryKey: ['expensesByCategory', user.id, year, month],
     queryFn: async () => {
-      return await trpcFetch<any[]>('getExpensesByCategory', { year, month, userId: user.id });
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+      return await trpcFetch<any[]>('getExpensesByCategory', { year, month, userId: userId });
     },
   });
 
@@ -31,8 +32,9 @@ export default function ReportsPage() {
   const { data: transactions = [], isLoading: loadingTransactions } = useQuery({
     queryKey: ['transactions', user.id, year, month],
     queryFn: async () => {
+      const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       return await trpcFetch<any[]>('getTransactions', {
-        userId: user.id,
+        userId: userId,
         year,
         month,
       });
