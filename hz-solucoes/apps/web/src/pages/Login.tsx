@@ -126,21 +126,14 @@ export default function LoginPage() {
           {/* Sem campos: login guest com um clique */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <Button
+              variant="ghost"
               onClick={() => {
                 console.log('Botão clicado, iniciando login...');
                 login.mutate();
               }}
               disabled={login.isPending}
-              className="btn-access"
-              style={{
-                background: '#ffffff',
-                color: 'var(--accent, #ff7a00)',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
-                boxShadow: '0 6px 18px rgba(0, 0, 0, 0.25)',
-                height: '44px',
-                width: '100%'
-              }}
-            >
+              className="btn-access w-full h-11"
+              >
               {login.isPending ? 'Carregando...' : 'Acessar'}
             </Button>
           </div>

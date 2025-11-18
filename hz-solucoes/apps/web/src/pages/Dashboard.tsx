@@ -728,16 +728,16 @@ export default function Dashboard() {
                     <div className="font-semibold text-white">{b.name}</div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="bg-white/10 border border-white/20 rounded p-2">
-                      <div className="text-xs text-white/90">Saldo</div>
+                    <div className="bg-transparent border border-white/40 rounded p-2">
+                      <div className="text-xs text-white">Saldo</div>
                       <div className="text-sm font-bold text-white">R$ 0,00</div>
                     </div>
-                    <div className="bg-white/10 border border-white/20 rounded p-2">
-                      <div className="text-xs text-white/90">Cartão • Limite</div>
+                    <div className="bg-transparent border border-white/40 rounded p-2">
+                      <div className="text-xs text-white">Cartão • Limite</div>
                       <div className="text-sm font-bold text-white">R$ 0,00</div>
                     </div>
-                    <div className="bg-white/10 border border-white/20 rounded p-2">
-                      <div className="text-xs text-white/90">Cartão • Fatura</div>
+                    <div className="bg-transparent border border-white/40 rounded p-2">
+                      <div className="text-xs text-white">Cartão • Fatura</div>
                       <div className="text-sm font-bold text-white">R$ 0,00</div>
                     </div>
                   </div>
