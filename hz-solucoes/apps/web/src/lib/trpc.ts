@@ -90,13 +90,30 @@ export async function trpcFetch<T>(
   procedure: string,
   input: any
 ): Promise<T> {
+  // Procedimentos que são mutation no backend (POST)
+  const MUTATIONS = new Set([
+    'login',
+    'loginGuest',
+    'addGoal',
+    'addTransaction',
+    'addItem',
+    'updateItemStatus',
+    'markDailyCare',
+    'addWaterIntake',
+  ]);
+  const isMutation = MUTATIONS.has(procedure);
+
   // O tRPC Express adapter espera a URL no formato /trpc/[procedure]
   // Se TRPC_URL já termina com /trpc, usa direto, senão adiciona
   let baseUrl = TRPC_URL;
   if (!baseUrl.endsWith('/trpc')) {
     baseUrl = baseUrl.endsWith('/') ? `${baseUrl}trpc` : `${baseUrl}/trpc`;
   }
-  const url = `${baseUrl}/${procedure}`;
+  // Para queries, o adapter espera GET com input serializado em querystring
+  // Para mutations, usa POST com body { input }
+  const url = isMutation
+    ? `${baseUrl}/${procedure}`
+    : `${baseUrl}/${procedure}?input=${encodeURIComponent(JSON.stringify(input ?? {}))}`;
   
   console.log(`[tRPC] ${procedure}`, { 
     TRPC_URL, 
@@ -119,13 +136,17 @@ export async function trpcFetch<T>(
     console.log(`[tRPC] Input keys:`, input ? Object.keys(input) : 'null');
     console.log(`[tRPC] Input values:`, input ? Object.values(input) : 'null');
     
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
+    const response = await fetch(url, isMutation
+      ? {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        }
+      : {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+        }
+    );
 
     const responseText = await response.text();
     console.log(`[tRPC] Response status: ${response.status}`);
