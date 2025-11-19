@@ -16,7 +16,6 @@ export default defineConfig({
             handler: 'NetworkOnly', // Sempre busca do servidor, nunca do cache
             options: {
               cacheName: 'trpc-api',
-              networkTimeoutSeconds: 10,
             },
           },
         ],
