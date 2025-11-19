@@ -42,6 +42,14 @@ type AppRouter = {
     input: { userId: number; type: 'income' | 'expense'; amount: number; description?: string; category?: string; isFixed?: boolean; date?: Date };
     output: void;
   };
+  updateTransaction: {
+    input: { id: number; userId: number; type?: 'income' | 'expense'; amount?: number; description?: string; category?: string; isFixed?: boolean };
+    output: void;
+  };
+  deleteTransaction: {
+    input: { id: number; userId: number };
+    output: void;
+  };
   getItems: {
     input: { userId: number; status?: 'pending' | 'bought' };
     output: any[];
@@ -65,12 +73,27 @@ type AppRouter = {
   getWaterIntake: {
     input: { userId: number; date?: Date };
     output: { total: number; intakes: any[] };
-  };
-  addWaterIntake: {
+  };  addWaterIntake: {
     input: { userId: number; amount: number };
     output: void;
   };
-  getExpensesByCategory: {
+  getAccounts: {
+    input: { userId: number };
+    output: any[];
+  };
+  addAccount: {
+    input: { userId: number; name: string; type: 'checking' | 'savings' | 'investment'; balance?: number; icon?: string };
+    output: void;
+  };
+  updateAccount: {
+    input: { id: number; userId: number; name?: string; balance?: number; icon?: string };
+    output: void;
+  };
+  deleteAccount: {
+    input: { id: number; userId: number };
+    output: void;
+  };
+}; getExpensesByCategory: {
     input: { year: number; month: number; userId?: number };
     output: any[];
   };
@@ -96,10 +119,15 @@ export async function trpcFetch<T>(
     'loginGuest',
     'addGoal',
     'addTransaction',
+    'updateTransaction',
+    'deleteTransaction',
     'addItem',
     'updateItemStatus',
     'markDailyCare',
     'addWaterIntake',
+    'addAccount',
+    'updateAccount',
+    'deleteAccount',
   ]);
   const isMutation = MUTATIONS.has(procedure);
 

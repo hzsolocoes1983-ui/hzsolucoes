@@ -56,3 +56,13 @@ export const waterIntake = sqliteTable('water_intake', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
+export const accounts = sqliteTable('accounts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull().references(() => users.id),
+  name: text('name').notNull(), // Nome da conta (ex: Itaú, Santander)
+  type: text('type').notNull(), // 'checking', 'savings', 'investment'
+  balance: real('balance').notNull().default(0),
+  icon: text('icon'), // Emoji ou identificador do ícone
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+});
+

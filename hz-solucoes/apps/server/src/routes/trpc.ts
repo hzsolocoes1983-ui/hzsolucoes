@@ -1,7 +1,7 @@
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { db } from '../db/index.js';
-import { users, goals, transactions, items, dailyCare, waterIntake } from '../db/schema.js';
+import { users, goals, transactions, items, dailyCare, waterIntake, accounts } from '../db/schema.js';
 import { eq, and, gte, lt, desc, sql } from 'drizzle-orm';
 
 const t = initTRPC.create();
@@ -155,6 +155,54 @@ export const router = t.router({
         .all();
       
       return result;
+    }),
+
+  updateTransaction: t.procedure
+    .input(z.object({
+      id: z.number(),
+      userId: z.number(),
+      type: z.enum(['income', 'expense']).optional(),
+      amount: z.number().optional(),
+      description: z.string().optional(),
+      category: z.string().optional(),
+      isFixed: z.boolean().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { id, userId, ...updates } = input;
+      
+      // Verifica se a transação pertence ao usuário
+      const transaction = await db.select()
+        .from(transactions)
+        .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
+        .get();
+      
+      if (!transaction) {
+        throw new Error('Transação não encontrada');
+      }
+
+      await db.update(transactions)
+        .set(updates)
+        .where(eq(transactions.id, id));
+    }),
+
+  deleteTransaction: t.procedure
+    .input(z.object({
+      id: z.number(),
+      userId: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      // Verifica se a transação pertence ao usuário
+      const transaction = await db.select()
+        .from(transactions)
+        .where(and(eq(transactions.id, input.id), eq(transactions.userId, input.userId)))
+        .get();
+      
+      if (!transaction) {
+        throw new Error('Transação não encontrada');
+      }
+
+      await db.delete(transactions)
+        .where(eq(transactions.id, input.id));
     }),
 
   // Metas
@@ -445,6 +493,81 @@ export const router = t.router({
         date: new Date(),
         createdAt: new Date(),
       });
+    }),
+
+  // Contas Bancárias
+  getAccounts: t.procedure
+    .input(z.object({ userId: z.number() }))
+    .query(async ({ input }) => {
+      return await db.select()
+        .from(accounts)
+        .where(eq(accounts.userId, input.userId))
+        .all();
+    }),
+
+  addAccount: t.procedure
+    .input(z.object({
+      userId: z.number(),
+      name: z.string(),
+      type: z.enum(['checking', 'savings', 'investment']),
+      balance: z.number().optional(),
+      icon: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      await db.insert(accounts).values({
+        userId: input.userId,
+        name: input.name,
+        type: input.type,
+        balance: input.balance || 0,
+        icon: input.icon,
+        createdAt: new Date(),
+      });
+    }),
+
+  updateAccount: t.procedure
+    .input(z.object({
+      id: z.number(),
+      userId: z.number(),
+      name: z.string().optional(),
+      balance: z.number().optional(),
+      icon: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { id, userId, ...updates } = input;
+      
+      // Verifica se a conta pertence ao usuário
+      const account = await db.select()
+        .from(accounts)
+        .where(and(eq(accounts.id, id), eq(accounts.userId, userId)))
+        .get();
+      
+      if (!account) {
+        throw new Error('Conta não encontrada');
+      }
+
+      await db.update(accounts)
+        .set(updates)
+        .where(eq(accounts.id, id));
+    }),
+
+  deleteAccount: t.procedure
+    .input(z.object({
+      id: z.number(),
+      userId: z.number(),
+    }))
+    .mutation(async ({ input }) => {
+      // Verifica se a conta pertence ao usuário
+      const account = await db.select()
+        .from(accounts)
+        .where(and(eq(accounts.id, input.id), eq(accounts.userId, input.userId)))
+        .get();
+      
+      if (!account) {
+        throw new Error('Conta não encontrada');
+      }
+
+      await db.delete(accounts)
+        .where(eq(accounts.id, input.id));
     }),
 });
 
