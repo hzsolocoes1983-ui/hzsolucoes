@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "api/*.ts": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "routes": [
+    { "src": "/trpc(?:/.*)?", "dest": "/api/trpc" },
+    { "src": "/whatsapp(?:/.*)?", "dest": "/api/whatsapp" },
+    { "src": "/health", "dest": "/api/health" }
+  ]
+}
