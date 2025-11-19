@@ -15,9 +15,21 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Log de requisições para debug
+app.use('/trpc', (req, res, next) => {
+  console.log('[tRPC Request]', {
+    method: req.method,
+    url: req.url,
+    body: req.body,
+    query: req.query
+  });
+  next();
+});
+
 // Middleware de tratamento de erros para tRPC
 app.use('/trpc', createExpressMiddleware({ 
   router,
+  createContext: ({ req, res }) => ({}), // Contexto vazio por enquanto
   onError: ({ error, path, type }) => {
     console.error(`[tRPC Error] ${type} ${path}:`, error);
   }

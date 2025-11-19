@@ -137,10 +137,8 @@ export async function trpcFetch<T>(
       throw new Error(`Input inválido para ${procedure}: deve ser um objeto`);
     }
     
-    // Cria o body no formato que o tRPC Express adapter espera
-    const requestBody = {
-      input: input
-    };
+    // O tRPC Express adapter espera o input diretamente no body, não dentro de {input: ...}
+    const requestBody = input;
     
     console.log(`[tRPC] ${procedure} - Request body:`, JSON.stringify(requestBody, null, 2));
     console.log(`[tRPC] ${procedure} - Input keys:`, Object.keys(input));
