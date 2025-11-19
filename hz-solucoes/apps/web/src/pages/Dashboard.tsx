@@ -731,8 +731,8 @@ export default function Dashboard() {
               <Card key={b.key} style={{ borderColor: b.border, backgroundColor: b.bg }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded bg-white/20 flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">{b.name[0]}</span>
+                    <div className="w-12 h-12 rounded bg-white/90 flex items-center justify-center p-2">
+                      <img src={b.logo} alt={b.name} className="w-full h-full object-contain" />
                     </div>
                     <div className="font-semibold text-white">{b.name}</div>
                   </div>
