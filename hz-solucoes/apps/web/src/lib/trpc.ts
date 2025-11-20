@@ -93,7 +93,7 @@ type AppRouter = {
     input: { id: number; userId: number };
     output: void;
   };
-}; getExpensesByCategory: {
+  getExpensesByCategory: {
     input: { year: number; month: number; userId?: number };
     output: any[];
   };

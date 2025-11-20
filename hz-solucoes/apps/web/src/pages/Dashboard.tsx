@@ -132,6 +132,21 @@ export default function Dashboard() {
     retry: 1,
   });
 
+  // Contas bancárias
+  const { data: accounts = [], isLoading: loadingAccounts } = useQuery({
+    queryKey: ['accounts', user.id],
+    queryFn: async () => {
+      try {
+        if (!user?.id) return [];
+        return await trpcFetch<any[]>('getAccounts', { userId: user.id });
+      } catch (error: any) {
+        console.error('Erro ao buscar contas:', error);
+        return [];
+      }
+    },
+    retry: 1,
+  });
+
   // Consumo de água do dia
   const { data: waterData = { total: 0, intakes: [] }, isLoading: loadingWater } = useQuery({
     queryKey: ['waterIntake', user.id, new Date().toDateString()],
