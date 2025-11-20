@@ -746,10 +746,10 @@ export default function Dashboard() {
               <Card key={b.key} style={{ borderColor: b.border, backgroundColor: b.bg }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded bg-white/90 flex items-center justify-center p-2">
+                    <div className="w-20 h-20 rounded bg-white flex items-center justify-center p-3 shadow-md">
                       <img src={b.logo} alt={b.name} className="w-full h-full object-contain" />
                     </div>
-                    <div className="font-semibold text-white">{b.name}</div>
+                    <div className="font-semibold text-lg text-white">{b.name}</div>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="bg-transparent border border-white/40 rounded p-2">
