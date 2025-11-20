@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "buildCommand": "cd hz-solucoes/apps/web && npm install && npm run build",
+  "outputDirectory": "hz-solucoes/apps/web/dist",
+  "framework": "vite",
+  "functions": {
+    "hz-solucoes/apps/server/api/**/*.ts": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/trpc(?:/.*)?",
+      "dest": "/hz-solucoes/apps/server/api/trpc.ts"
+    },
+    {
+      "src": "/whatsapp(?:/.*)?",
+      "dest": "/hz-solucoes/apps/server/api/whatsapp.ts"
+    },
+    {
+      "src": "/health",
+      "dest": "/hz-solucoes/apps/server/api/health.ts"
+    },
+    {
+      "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|svg|gif|woff|woff2|ttf|eot))",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
+

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '../db/index.js';
 import { users, goals, transactions, items, dailyCare, waterIntake, accounts } from '../db/schema.js';
 import { eq, and, gte, lt, desc, sql } from 'drizzle-orm';
+import { hashPassword, comparePassword, generateToken } from '../lib/auth.js';
 
 const t = initTRPC.create();
 
@@ -24,12 +25,25 @@ export const router = t.router({
     .mutation(async ({ input }) => {
       const user = await db.select().from(users).where(eq(users.whatsapp, input.whatsapp)).get();
       
-      if (!user || user.password !== input.password) {
+      if (!user) {
         throw new Error('Credenciais inválidas');
       }
 
+      // Verifica senha usando bcrypt
+      const passwordMatch = await comparePassword(input.password, user.password);
+      if (!passwordMatch) {
+        throw new Error('Credenciais inválidas');
+      }
+
+      // Gera token JWT
+      const token = generateToken({
+        userId: user.id,
+        whatsapp: user.whatsapp,
+        name: user.name,
+      });
+
       return {
-        token: 'token-' + user.id,
+        token,
         user: { whatsapp: user.whatsapp, name: user.name, id: user.id }
       };
     }),
@@ -51,10 +65,12 @@ export const router = t.router({
 
         if (!user) {
           console.log('[loginGuest] Criando novo usuário...');
+          // Hash da senha padrão
+          const hashedPassword = await hashPassword(defaultPassword);
           await db.insert(users).values({
             whatsapp: defaultWhatsApp,
             name: defaultName,
-            password: defaultPassword,
+            password: hashedPassword,
             createdAt: new Date(),
           });
           user = await db.select().from(users).where(eq(users.whatsapp, defaultWhatsApp)).get();
@@ -65,8 +81,15 @@ export const router = t.router({
           throw new Error('Falha ao criar usuário padrão');
         }
 
+        // Gera token JWT
+        const token = generateToken({
+          userId: user.id,
+          whatsapp: user.whatsapp,
+          name: user.name,
+        });
+
         const result = {
-          token: 'token-' + user.id,
+          token,
           user: { whatsapp: user.whatsapp, name: user.name, id: user.id }
         };
         console.log('[loginGuest] Login bem-sucedido:', result.user.name);
@@ -81,10 +104,12 @@ export const router = t.router({
     .input(z.object({ whatsapp: z.string(), name: z.string(), password: z.string() }))
     .mutation(async ({ input }) => {
       try {
+        // Hash da senha antes de salvar
+        const hashedPassword = await hashPassword(input.password);
         await db.insert(users).values({
           whatsapp: input.whatsapp,
           name: input.name,
-          password: input.password,
+          password: hashedPassword,
           createdAt: new Date(),
         });
       } catch (error: any) {

@@ -2,16 +2,32 @@
 node_modules/
 dist/
 .turbo/
-apps/*/dist/
-apps/*/node_modules/
+**/node_modules/
+**/dist/
+*.tsbuildinfo
 
 # Ambiente e logs
 .env*
 *.log
+*.db
+*.db-journal
+local.db
 
 # SO/Editor
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+
+# Arquivos temporários e de sistema
+*.tmp
+*.temp
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Arquivos estranhos
+ktophz-solucoes-realtime-whatsapphz-solucoesappsweb
 
 # Pasta legada (não commitar)
 hz-solucoes-railway/

@@ -6,6 +6,7 @@ import { Modal } from '../components/ui/modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpcFetch } from '../lib/trpc';
 import { formatCurrency, parseBrazilianNumber, formatCurrencyInput, requireAuth } from '../lib/utils';
+import { exportTransactionsToCSV } from '../lib/csvExport';
 
 export default function TransactionsPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -17,6 +18,7 @@ export default function TransactionsPage() {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [isFixed, setIsFixed] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   const queryClient = useQueryClient();
   
@@ -156,11 +158,22 @@ export default function TransactionsPage() {
   const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-  const totalIncome = transactions
+  // Filtrar transações por busca
+  const filteredTransactions = transactions.filter(t => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      (t.description?.toLowerCase().includes(term)) ||
+      (t.category?.toLowerCase().includes(term)) ||
+      (t.amount.toString().includes(term))
+    );
+  });
+
+  const totalIncome = filteredTransactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
   
-  const totalExpenses = transactions
+  const totalExpenses = filteredTransactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
 
@@ -169,9 +182,19 @@ export default function TransactionsPage() {
       <div className="bg-white shadow-sm p-4 sticky top-0 z-10">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-gray-800">Transações</h1>
-          <Button variant="outline" onClick={() => window.history.back()}>
-            Voltar
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => exportTransactionsToCSV(transactions)}
+              disabled={transactions.length === 0}
+            >
+              📊 Exportar CSV
+            </Button>
+            <Button variant="outline" onClick={() => window.history.back()}>
+              Voltar
+            </Button>
+          </div>
         </div>
         
         <div className="flex gap-2 mb-4">
@@ -196,6 +219,17 @@ export default function TransactionsPage() {
           >
             Despesas
           </Button>
+        </div>
+
+        {/* Campo de busca */}
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="🔍 Buscar por descrição, categoria ou valor..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
         <div className="flex gap-2">
@@ -238,7 +272,7 @@ export default function TransactionsPage() {
         {/* Lista de Transações */}
         {isLoading ? (
           <div className="text-center py-8 text-gray-500">Carregando...</div>
-        ) : transactions.length === 0 ? (
+        ) : filteredTransactions.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-gray-500">
               Nenhuma transação encontrada para este período.
@@ -246,7 +280,7 @@ export default function TransactionsPage() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {transactions.map((transaction: any) => (
+            {filteredTransactions.map((transaction: any) => (
               <Card key={transaction.id}>
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start">

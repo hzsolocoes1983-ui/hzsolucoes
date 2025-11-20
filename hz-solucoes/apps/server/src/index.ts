@@ -1,16 +1,25 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import { router } from './routes/trpc.js';
 import whatsappRouter from './routes/whatsapp.js';
 import { initDatabase } from './db/migrate.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
-// CORS configuration - allow all origins in development, specific in production
+// CORS configuration - secure by default
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: process.env.NODE_ENV === 'production' 
+    ? (process.env.CORS_ORIGIN || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '*')
+    : (process.env.CORS_ORIGIN || '*'), // Em desenvolvimento, permite todas as origens
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -39,6 +48,23 @@ app.use('/whatsapp', whatsappRouter);
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Servir arquivos estáticos do frontend (após build)
+const frontendDistPath = path.resolve(__dirname, '../../web/dist');
+app.use(express.static(frontendDistPath));
+
+// Fallback para SPA: todas as rotas não-API retornam index.html
+app.get('*', (req, res, next) => {
+  // Ignorar rotas de API
+  if (req.path.startsWith('/trpc') || 
+      req.path.startsWith('/whatsapp') || 
+      req.path.startsWith('/health')) {
+    return next();
+  }
+  
+  // Servir index.html para todas as outras rotas (SPA routing)
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
 
 const port = process.env.PORT || 3000;

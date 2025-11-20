@@ -1,0 +1,15 @@
+{
+  "name": "hz-solucoes-realtime-whatsapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HZ Soluções - Sistema de gestão financeira e pessoal com integração WhatsApp",
+  "scripts": {
+    "build:web": "cd hz-solucoes/apps/web && npm install && npm run build",
+    "build:server": "cd hz-solucoes/apps/server && npm install && npm run build",
+    "install:all": "cd hz-solucoes/apps/web && npm install && cd ../server && npm install"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
+

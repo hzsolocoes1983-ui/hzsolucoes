@@ -6,6 +6,7 @@ import { Modal } from '../components/ui/modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpcFetch } from '../lib/trpc';
 import { formatCurrency, parseBrazilianNumber, requireAuth } from '../lib/utils';
+import { exportGoalsToCSV } from '../lib/csvExport';
 
 export default function GoalsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -65,6 +66,14 @@ export default function GoalsPage() {
           <div className="flex gap-2">
             <Button size="sm" onClick={() => setShowAddModal(true)}>
               + Nova Meta
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => exportGoalsToCSV(goals)}
+              disabled={goals.length === 0}
+            >
+              📊 Exportar
             </Button>
             <Button variant="outline" size="sm" onClick={() => window.history.back()}>
               Voltar

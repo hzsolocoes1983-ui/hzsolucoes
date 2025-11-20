@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { ThemeProvider } from './contexts/ThemeContext';
+import './styles/theme.css';
 
 // Pages
 import LoginPage from './pages/Login';
@@ -47,7 +49,8 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 export default function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
         <Router>
           <Routes>
             {/* Public Routes */}
@@ -92,7 +95,8 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
-      </QueryClientProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

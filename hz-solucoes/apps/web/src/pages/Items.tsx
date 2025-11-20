@@ -5,6 +5,7 @@ import { Modal } from '../components/ui/modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpcFetch } from '../lib/trpc';
 import { formatCurrency, parseBrazilianNumber, requireAuth } from '../lib/utils';
+import { exportItemsToCSV } from '../lib/csvExport';
 
 export default function ItemsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -76,6 +77,14 @@ export default function ItemsPage() {
           <div className="flex gap-2">
             <Button size="sm" onClick={() => setShowAddModal(true)}>
               + Adicionar
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => exportItemsToCSV(allItems)}
+              disabled={allItems.length === 0}
+            >
+              📊 Exportar
             </Button>
             <Button variant="outline" size="sm" onClick={() => window.history.back()}>
               Voltar

@@ -6,6 +6,7 @@ import { Modal } from '../components/ui/modal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trpcFetch } from '../lib/trpc';
 import { formatCurrency, parseBrazilianNumber, formatCurrencyInput, getAuthenticatedUser } from '../lib/utils';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -438,19 +439,7 @@ export default function Dashboard() {
             <p className="text-sm text-gray-600 dark:text-gray-300">Bem-vindo, {user.name || 'Usuário'}!</p>
           </div>
           <div className="flex gap-2 items-center">
-            <Button variant="outline" onClick={() => {
-              const root = document.documentElement;
-              const next = !root.classList.contains('dark');
-              if (next) {
-                root.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-              } else {
-                root.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-              }
-            }}>
-              Modo escuro
-            </Button>
+            <ThemeToggle />
             <Button variant="outline" onClick={() => { localStorage.clear(); location.reload(); }}>
               Sair
             </Button>
