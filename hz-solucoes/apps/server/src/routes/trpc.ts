@@ -12,7 +12,7 @@ function categorizeExpense(description: string): string {
   const desc = description.toLowerCase();
   if (desc.includes('mercado') || desc.includes('supermercado') || desc.includes('comida')) return 'Alimentação';
   if (desc.includes('combustível') || desc.includes('gasolina') || desc.includes('posto')) return 'Transporte';
-  if (desc.includes('farmacia') || desc.includes('remédio') || desc.includes('medicamento')) return 'Saúde';
+  if (desc.includes('farmacia') || desc.includes('farmácia') || desc.includes('remédio') || desc.includes('medicamento')) return 'Saúde';
   if (desc.includes('conta') || desc.includes('luz') || desc.includes('água') || desc.includes('internet')) return 'Contas';
   if (desc.includes('restaurante') || desc.includes('lanche') || desc.includes('ifood')) return 'Alimentação';
   return 'Outros';
