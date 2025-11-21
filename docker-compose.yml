@@ -1,0 +1,29 @@
+services:
+  hz-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_TRPC_URL: /trpc
+    container_name: hz-backend
+    ports:
+      - "8080:3000" # usa 8080 no host para não conflitar com dev local
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - DATABASE_URL=file:/data/local.db
+      - CORS_ORIGIN=*
+      - EVOLUTION_API_URL=http://evolution-api:8080
+      - EVOLUTION_API_KEY=minha-api-key-123
+      - EVOLUTION_INSTANCE_NAME=hzsolucoes
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3000/health', res => { if (res.statusCode === 200) process.exit(0); else process.exit(1); }).on('error', () => process.exit(1));\" "]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - hz_data:/data
+    restart: unless-stopped
+
+volumes:
+  hz_data:
